@@ -1,0 +1,40 @@
+{
+  "name": "@tabnas/json",
+  "version": "1.0.0",
+  "main": "dist/json.js",
+  "type": "commonjs",
+  "types": "dist/json.d.ts",
+  "description": "A standard JSON parser (RFC 8259).",
+  "keywords": [
+    "json",
+    "parser",
+    "rfc8259",
+    "ecma-404"
+  ],
+  "author": "tabnas",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc --build src",
+    "watch": "tsc --build src -w",
+    "clean": "rm -rf node_modules dist package-lock.json",
+    "test": "npm run build && node --enable-source-maps --test test/**/*.test.js"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "LICENSE"
+  ],
+  "bin": {
+    "tabnas-json": "bin/json"
+  },
+  "exports": {
+    ".": "./dist/json.js"
+  },
+  "devDependencies": {
+    "@types/node": "20.x",
+    "typescript": "5.x"
+  }
+}
