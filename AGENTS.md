@@ -102,3 +102,19 @@ Go:
 ```bash
 cd go && go test ./...             # also runs the shared spec fixtures
 ```
+
+## Coverage
+
+Both runtimes keep the plugin layer at ≥95% line coverage (the parsing
+engine is a dependency with its own suite, so it is out of scope here):
+
+```bash
+cd ts && npm run coverage          # node --test, enforces lines ≥ 95%
+cd go && go test -cover ./...      # currently 100% of statements
+```
+
+The grammar action closures (`registerJsonGrammar` /
+`RegisterJSONGrammar`) are kept standard-only: branches that handle
+inputs the strict lexer cannot produce (empty values, non-string keys)
+were removed, so the rule actions stay reachable and covered. Keep it
+that way — don't reintroduce dead extended-grammar handling.

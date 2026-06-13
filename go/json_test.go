@@ -141,6 +141,42 @@ func TestPluginIsUsable(t *testing.T) {
 	}
 }
 
+func TestInfoOptions(t *testing.T) {
+	// Enabling Info.Map/List/Text exercises the MapRef/ListRef/Text
+	// branches the plain-JSON config leaves off (and the Make extra-options
+	// path); kept so other plugins can build on this grammar.
+	tr := true
+	j := Make(tabnas.Options{Info: &tabnas.InfoOptions{Map: &tr, List: &tr, Text: &tr}})
+	out, err := j.Parse(`{"a":["x",1]}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mr, ok := out.(tabnas.MapRef)
+	if !ok {
+		t.Fatalf("want MapRef, got %T", out)
+	}
+	if mr.Implicit {
+		t.Error("explicit map marked implicit")
+	}
+	lr, ok := mr.Val["a"].(tabnas.ListRef)
+	if !ok {
+		t.Fatalf("want ListRef, got %T", mr.Val["a"])
+	}
+	if lr.Implicit {
+		t.Error("explicit list marked implicit")
+	}
+	if len(lr.Val) != 2 {
+		t.Fatalf("list len = %d, want 2", len(lr.Val))
+	}
+	tx, ok := lr.Val[0].(tabnas.Text)
+	if !ok {
+		t.Fatalf("want Text, got %T", lr.Val[0])
+	}
+	if tx.Quote != `"` || tx.Str != "x" {
+		t.Fatalf("text = %+v", tx)
+	}
+}
+
 func TestRejectsExtendedGrammar(t *testing.T) {
 	// Inputs jsonic accepts but standard JSON does not.
 	for _, in := range []string{

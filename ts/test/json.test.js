@@ -26,6 +26,30 @@ describe('json', () => {
     assert.deepStrictEqual(norm(am.parse('{"a":[1,2,3]}')), { a: [1, 2, 3] })
   })
 
+  it('supports the engine info options (foundation for other parsers)', () => {
+    // Enabling info.map/list/text exercises the marker-attaching branches
+    // the plain-JSON config leaves off; kept so other plugins can build on
+    // this grammar.
+    const am = new Tabnas({
+      plugins: [json],
+      info: { map: true, list: true, text: true },
+    })
+    const out = am.parse('{"a":["x",1],"__info__":9}')
+    // The key matching the marker is dropped to preserve metadata.
+    assert.deepStrictEqual(Object.keys(out), ['a'])
+    const mapMark = Object.getOwnPropertyDescriptor(out, '__info__')
+    assert.strictEqual(mapMark.value.implicit, false)
+    // List marker.
+    assert.ok(Array.isArray(out.a))
+    const listMark = Object.getOwnPropertyDescriptor(out.a, '__info__')
+    assert.strictEqual(listMark.value.implicit, false)
+    // String values are wrapped with quote info.
+    assert.ok(out.a[0] instanceof String)
+    assert.strictEqual(String(out.a[0]), 'x')
+    const textMark = Object.getOwnPropertyDescriptor(out.a[0], '__info__')
+    assert.strictEqual(textMark.value.quote, '"')
+  })
+
   it('parses scalars', () => {
     assert.strictEqual(parse('42'), 42)
     assert.strictEqual(parse('-3.14'), -3.14)

@@ -82,61 +82,36 @@ const JSON_OPTIONS = {
 // grammar plugins can layer their extensions on top without re-declaring
 // the JSON core. This is jsonic's "Plain JSON" grammar.
 export function registerJsonGrammar(am: Tabnas): void {
-  const {
-    TX, // Text (unquoted character sequence)
-    ST, // String (quoted character sequence)
-  } = am.token
-
   am.grammar({
     ref: {
-      '@finish': (_rule: Rule, ctx: Context) => {
-        if (!ctx.cfg.rule.finish) {
-          ctx.t0.err = 'end_of_source'
-          return ctx.t0
-        }
-        return undefined
-      },
-
-      // Get key string value from first matching token of `Open` state.
+      // Strict JSON keys are quoted strings (the KEY token set is
+      // restricted to #ST), so the key value is the decoded string.
       '@pairkey': (r: Rule) => {
-        const key_token = r.o0
-        const key =
-          ST === key_token.tin || TX === key_token.tin
-            ? key_token.val // Was text
-            : key_token.src // Was number, use original text
-
-        r.u.key = key
+        r.u.key = r.o0.val
       },
 
       '@val-bo': (rule: Rule) => (rule.node = undefined),
       '@val-bc': (r: Rule, ctx: Context) => {
-        // val can be undefined when there is no value at all (eg. empty
-        // string, thus no matched opening token).
-        r.node =
-          undefined === r.node
-            ? undefined === r.child.node
-              ? 0 === r.os
-                ? undefined
-                : (() => {
-                    let val = r.o0.resolveVal(r, ctx)
-                    if (
-                      ctx.cfg.info.text &&
-                      typeof val === 'string' &&
-                      (r.o0.tin === ctx.cfg.t.ST ||
-                        r.o0.tin === ctx.cfg.t.TX)
-                    ) {
-                      const quote =
-                        r.o0.tin === ctx.cfg.t.ST && r.o0.src.length > 0
-                          ? r.o0.src[0]
-                          : ''
-                      const sv = new String(val)
-                      mark(sv, ctx.cfg.info.marker, { quote })
-                      val = sv as any
-                    }
-                    return val
-                  })()
-              : r.child.node
-            : r.node
+        // A map/list child node wins; otherwise the value is the scalar
+        // token. (The strict lexer guarantees a value rule always has one
+        // or the other — there are no empty values to coalesce.)
+        if (undefined !== r.child.node) {
+          r.node = r.child.node
+          return
+        }
+        let val = r.o0.resolveVal(r, ctx)
+        if (
+          ctx.cfg.info.text &&
+          typeof val === 'string' &&
+          (r.o0.tin === ctx.cfg.t.ST || r.o0.tin === ctx.cfg.t.TX)
+        ) {
+          const quote =
+            r.o0.tin === ctx.cfg.t.ST && r.o0.src.length > 0 ? r.o0.src[0] : ''
+          const sv = new String(val)
+          mark(sv, ctx.cfg.info.marker, { quote })
+          val = sv as any
+        }
+        r.node = val
       },
 
       '@map-bo': (r: Rule, ctx: Context) => {

@@ -102,22 +102,14 @@ func RegisterJSONGrammar(j *tabnas.Tabnas) {
 			r.Node = tabnas.Undefined
 		}}
 		rs.BC = []tabnas.StateAction{func(r *tabnas.Rule, ctx *tabnas.Context) {
-			if !tabnas.IsUndefined(r.Node) {
-				return
-			}
+			// A map/list child node wins; otherwise the value is the scalar
+			// token. (The strict lexer guarantees a value rule always has
+			// one or the other — there are no empty values to coalesce.)
 			if !tabnas.IsUndefined(r.Child.Node) {
 				r.Node = r.Child.Node
 				return
 			}
-			if r.OS == 0 {
-				r.Node = tabnas.Undefined
-				return
-			}
 			val := r.O0.ResolveVal(r, ctx)
-			if val == nil && r.O0.Tin != tabnas.TinVL {
-				r.Node = tabnas.Undefined
-				return
-			}
 			if cfg.TextInfo && (r.O0.Tin == tabnas.TinST || r.O0.Tin == tabnas.TinTX) {
 				quote := ""
 				if r.O0.Tin == tabnas.TinST && len(r.O0.Src) > 0 {
@@ -194,15 +186,10 @@ func RegisterJSONGrammar(j *tabnas.Tabnas) {
 	// pair: a key:value entry inside a map.
 	j.Rule("pair", func(rs *tabnas.RuleSpec, _ *tabnas.Parser) {
 		rs.BC = []tabnas.StateAction{func(r *tabnas.Rule, ctx *tabnas.Context) {
-			if _, ok := r.U["pair"]; !ok {
-				return
+			if _, ok := r.U["pair"]; ok {
+				key, _ := r.U["key"].(string)
+				r.Node = jsonMapSet(r.Node, key, r.Child.Node)
 			}
-			key, _ := r.U["key"].(string)
-			val := r.Child.Node
-			if tabnas.IsUndefined(val) {
-				val = nil
-			}
-			r.Node = jsonMapSet(r.Node, key, val)
 		}}
 		rs.Open = []*tabnas.AltSpec{
 			{
@@ -211,12 +198,9 @@ func RegisterJSONGrammar(j *tabnas.Tabnas) {
 				U: map[string]any{"pair": true},
 				G: "map,pair,key,json",
 				A: func(r *tabnas.Rule, ctx *tabnas.Context) {
-					keyToken := r.O0
-					if keyToken.Tin == tabnas.TinST || keyToken.Tin == tabnas.TinTX {
-						r.U["key"], _ = keyToken.Val.(string)
-					} else {
-						r.U["key"] = keyToken.Src
-					}
+					// Strict JSON keys are quoted strings (the KEY token set
+					// is restricted to #ST), so the key value is the string.
+					r.U["key"], _ = r.O0.Val.(string)
 				},
 			},
 		}
@@ -229,12 +213,11 @@ func RegisterJSONGrammar(j *tabnas.Tabnas) {
 	// elem: a value inside a list.
 	j.Rule("elem", func(rs *tabnas.RuleSpec, _ *tabnas.Parser) {
 		rs.BC = []tabnas.StateAction{func(r *tabnas.Rule, ctx *tabnas.Context) {
-			if tabnas.IsUndefined(r.Child.Node) {
-				return
-			}
-			r.Node = jsonListAppend(r.Node, r.Child.Node)
-			if r.Parent != tabnas.NoRule && r.Parent != nil {
-				r.Parent.Node = r.Node
+			if !tabnas.IsUndefined(r.Child.Node) {
+				r.Node = jsonListAppend(r.Node, r.Child.Node)
+				if r.Parent != tabnas.NoRule && r.Parent != nil {
+					r.Parent.Node = r.Node
+				}
 			}
 		}}
 		rs.Open = []*tabnas.AltSpec{
