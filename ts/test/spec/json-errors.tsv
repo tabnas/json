@@ -26,11 +26,14 @@ nul	unexpected
 1.	unexpected
 1e	unexpected
 -	unexpected
-"\xZZ"	invalid_ascii
-"\uZ"	invalid_unicode
-"\uZZZZ"	invalid_unicode
 "\q"	unexpected
 "a\zb"	unexpected
+"\v"	unexpected
+"\x41"	unexpected
+"\`"	unexpected
+"\u{41}"	invalid_unicode
+"\uZ"	invalid_unicode
+"\uZZZZ"	invalid_unicode
 01	unexpected
 00	unexpected
 123abc	unexpected

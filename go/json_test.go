@@ -155,6 +155,11 @@ func TestRejectsExtendedGrammar(t *testing.T) {
 		"+1",        // leading plus
 		"1.",        // trailing dot
 		"01",        // leading zero
+		`"\x41"`,    // \xHH ascii escape
+		`"\u{41}"`,  // \u{...} braced escape
+		`"\v"`,      // non-standard \v escape
+		`"\'"`,      // non-standard \' escape
+		"\"\\`\"",   // non-standard backtick escape
 		"",          // empty input
 		"   ",       // whitespace only
 	} {

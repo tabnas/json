@@ -60,31 +60,34 @@ sibling and builds it first.
    with the same code; if you add an error fixture, verify the code is
    identical in both runtimes before committing it.
 4. Stay standard. Any change that would accept input `JSON.parse` /
-   `encoding/json` reject (or reject input they accept) is a bug. The
-   strict-number tightening lives in `JSON_OPTIONS` / `jsonOptions`
-   (`number.exclude`): keep TS regex and Go predicate in sync.
+   `encoding/json` reject (or reject input they accept) is a bug. Two
+   pieces of `JSON_OPTIONS` / `jsonOptions` enforce strictness the engine
+   defaults leave open — keep them in sync across runtimes:
+   - `number.exclude` (TS regex / Go predicate) rejects non-standard
+     numbers (`+1`, `.5`, `1.`, `01`, `00`).
+   - `string.escapeStrict: true` plus dropping `v` / `'` / `` ` `` from
+     the escape map (`escape: { v: '', "'": '', '`': '' }`) and
+     `allowUnknown: false` restrict escapes to exactly the standard JSON
+     set. `escapeStrict` disables the engine's `\xHH` and `\u{...}`
+     structural escapes (plain `\uXXXX`, including surrogate pairs,
+     stays).
 5. Keep the grammar a reusable foundation. `registerJsonGrammar` (TS) /
    `RegisterJSONGrammar` (Go) install only the JSON core so other plugins
    can layer on it; don't fold options-specific behavior into the rules.
 
-## Known engine-imposed deviation: string escapes
+## String escapes
 
-Both engines recognise the standard JSON escapes (`\" \\ \/ \b \f \n \r
-\t \uXXXX`) and reject unknown ones (`\q`, `\z` → `unexpected`) — and
-they do so *identically*, which is what lets the error fixtures assert a
-shared code.
-
-The engine's string lexer additionally hardcodes a few non-standard
-escapes that `JSON.parse` / `encoding/json` reject: `\v`, `\'`, `` \` ``,
-the `\xHH` ASCII escape, and the `\u{H..}` braced form. These cannot be
-disabled through options (in Go the escape set is a hardcoded `switch`;
-the escape-map option can only add or override entries, not remove the
-built-ins). So both runtimes currently **accept** them — the same way in
-each, so cross-language parity holds, but it is a deviation from strict
-JSON. Removing it requires a strict-escape mode in the `tabnas` engine;
-until then it is a documented limitation, not a fixture. Do not add these
-escapes to `json-valid.tsv` (the valid runner cross-checks against the
-platform parser, which rejects them).
+Both runtimes accept exactly the standard JSON escapes (`\" \\ \/ \b \f
+\n \r \t \uXXXX`) and reject everything else — unknown escapes (`\q`,
+`\z` → `unexpected`), the non-standard built-ins (`\v`, `\'`, `` \` `` →
+`unexpected`), the `\xHH` ASCII escape (`\x41` → `unexpected`), and the
+`\u{...}` braced form (`\u{41}` → `invalid_unicode`, since `{` is not a
+hex digit on the plain `\uXXXX` path). This requires the `tabnas` engine's
+`string.escapeStrict` option (added on `main`); the strict config is set
+in `JSON_OPTIONS` / `jsonOptions`. These rejections are covered by
+`json-errors.tsv` with shared codes. Do not add these escapes to
+`json-valid.tsv` — the valid runner cross-checks against the platform
+parser, which rejects them.
 
 ## Build & test
 

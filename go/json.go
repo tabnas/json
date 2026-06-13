@@ -59,6 +59,7 @@ func jsonListAppend(node any, val any) any {
 // in the TypeScript json.ts.
 func jsonOptions() tabnas.Options {
 	f := false
+	tr := true
 	return tabnas.Options{
 		Text: &tabnas.TextOptions{Lex: &f},
 		Number: &tabnas.NumberOptions{
@@ -69,11 +70,15 @@ func jsonOptions() tabnas.Options {
 		String: &tabnas.StringOptions{
 			Chars:      `"`,
 			MultiChars: "",
-			// AllowUnknown:false rejects any escape the engine does not
-			// recognize (e.g. \q, \z). The recognized escape set is the
-			// engine's hardcoded one, identical to the TS engine's — see
-			// AGENTS.md on the engine-imposed escape behavior.
+			// Standard JSON escape handling: AllowUnknown:false rejects any
+			// unrecognized escape (\q, \z); EscapeStrict disables the
+			// non-standard \xHH and \u{...} structural escapes (plain
+			// \uXXXX stays); and dropping v / ' / ` from the escape map
+			// removes the remaining non-standard built-ins. Result: exactly
+			// the encoding/json escape set, identical to the TS engine.
 			AllowUnknown: &f,
+			EscapeStrict: &tr,
+			Escape:       map[string]string{"v": "", "'": "", "`": ""},
 		},
 		Comment: &tabnas.CommentOptions{Lex: &f},
 		Map:     &tabnas.MapOptions{Extend: &f},

@@ -72,6 +72,11 @@ describe('json', () => {
       '+1', // leading plus
       '1.', // trailing dot
       '01', // leading zero
+      '"\\x41"', // \xHH ascii escape
+      '"\\u{41}"', // \u{...} braced escape
+      '"\\v"', // non-standard \v escape
+      '"\\\'"', // non-standard \' escape
+      '"\\`"', // non-standard backtick escape
     ]) {
       assert.throws(() => parse(bad), `should reject: ${bad}`)
       assert.throws(() => JSON.parse(bad), `JSON.parse accepts: ${bad}`)
