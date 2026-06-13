@@ -1,0 +1,69 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-ts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [20.x, 22.x]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    # This package is a grammar plugin for the tabnas engine; check both
+    # out as siblings so the `tabnas` file: dependency (../../parser/ts)
+    # resolves.
+    - uses: actions/checkout@v4
+      with:
+        path: json
+    - uses: actions/checkout@v4
+      with:
+        repository: tabnas/parser
+        path: parser
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+    # Build the tabnas engine first so this package can resolve and import it.
+    - run: npm install && npm run build
+      working-directory: ./parser/ts
+    - run: npm install
+      working-directory: ./json/ts
+    - run: npm test
+      working-directory: ./json/ts
+
+  build-go:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    # The Go module depends on github.com/tabnas/parser/go via a replace
+    # directive (../../parser/go), so check the engine out as a sibling.
+    - uses: actions/checkout@v4
+      with:
+        path: json
+    - uses: actions/checkout@v4
+      with:
+        repository: tabnas/parser
+        path: parser
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+    - name: Vet
+      run: go vet ./...
+      working-directory: ./json/go
+    - name: Test
+      run: go test ./...
+      working-directory: ./json/go

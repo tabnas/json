@@ -1,0 +1,9 @@
+#!/usr/bin/env node
+const { main } = require('../dist/json-cli.js')
+main(
+  process.argv.slice(2),
+  process.stdin,
+  (s) => process.stdout.write(s),
+  (s) => process.stderr.write(s),
+  (code) => process.exit(code),
+)

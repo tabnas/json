@@ -1,0 +1,41 @@
+input	code
+{	unexpected
+[	unexpected
+{"a":1	unexpected
+[1	unexpected
+"abc	unterminated_string
+{"a"}	unexpected
+{"a":1,}	unexpected
+{,}	unexpected
+{"a":1 "b":2}	unexpected
+[1,]	unexpected
+[1 2]	unexpected
+'single'	unexpected
+{a:1}	unexpected
+[1,2,]	unexpected
+1 // note	unexpected
+a:1,b:2	unexpected
+x,y,z	unexpected
+1,2	unexpected
+0x10	unexpected
+.5	unexpected
++1	unexpected
+True	unexpected
+tru	unexpected
+nul	unexpected
+1.	unexpected
+1e	unexpected
+-	unexpected
+"\q"	unexpected
+"a\zb"	unexpected
+"\v"	unexpected
+"\x41"	unexpected
+"\`"	unexpected
+"\u{41}"	invalid_unicode
+"\uZ"	invalid_unicode
+"\uZZZZ"	invalid_unicode
+01	unexpected
+00	unexpected
+123abc	unexpected
+[1,2]x	unexpected
+nullnull	unexpected
