@@ -53,9 +53,12 @@ sibling and builds it first.
 2. The shared fixtures in `ts/test/spec/*.tsv` are the parity contract.
    Both suites run them and both must stay green. The Go suite resolves
    them at `../ts/test/spec` (see `go/json_test.go` `specDir`).
-3. Error **codes** are engine-specific and are a known difference between
-   the runtimes, so the shared error fixtures assert only that an input
-   is *rejected* (`ERROR`), not a particular code.
+3. Error **codes** are part of the shared contract. `json-errors.tsv` is
+   `input → code`, and both suites assert the exact code
+   (`unexpected`, `unterminated_string`, `invalid_ascii`,
+   `invalid_unicode`). The runtimes are required to reject the same input
+   with the same code; if you add an error fixture, verify the code is
+   identical in both runtimes before committing it.
 4. Stay standard. Any change that would accept input `JSON.parse` /
    `encoding/json` reject (or reject input they accept) is a bug. The
    strict-number tightening lives in `JSON_OPTIONS` / `jsonOptions`
@@ -63,6 +66,25 @@ sibling and builds it first.
 5. Keep the grammar a reusable foundation. `registerJsonGrammar` (TS) /
    `RegisterJSONGrammar` (Go) install only the JSON core so other plugins
    can layer on it; don't fold options-specific behavior into the rules.
+
+## Known engine-imposed deviation: string escapes
+
+Both engines recognise the standard JSON escapes (`\" \\ \/ \b \f \n \r
+\t \uXXXX`) and reject unknown ones (`\q`, `\z` → `unexpected`) — and
+they do so *identically*, which is what lets the error fixtures assert a
+shared code.
+
+The engine's string lexer additionally hardcodes a few non-standard
+escapes that `JSON.parse` / `encoding/json` reject: `\v`, `\'`, `` \` ``,
+the `\xHH` ASCII escape, and the `\u{H..}` braced form. These cannot be
+disabled through options (in Go the escape set is a hardcoded `switch`;
+the escape-map option can only add or override entries, not remove the
+built-ins). So both runtimes currently **accept** them — the same way in
+each, so cross-language parity holds, but it is a deviation from strict
+JSON. Removing it requires a strict-escape mode in the `tabnas` engine;
+until then it is a documented limitation, not a fixture. Do not add these
+escapes to `json-valid.tsv` (the valid runner cross-checks against the
+platform parser, which rejects them).
 
 ## Build & test
 

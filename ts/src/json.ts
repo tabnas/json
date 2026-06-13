@@ -59,8 +59,11 @@ const JSON_OPTIONS = {
   string: {
     chars: '"',
     multiChars: '',
+    // allowUnknown:false rejects any escape the engine does not recognize
+    // (e.g. \q, \z). The engine's recognized escape set is left at its
+    // default so it stays identical to the Go engine's (hardcoded) set —
+    // see AGENTS.md on the engine-imposed escape behavior.
     allowUnknown: false,
-    escape: { v: null },
   },
   comment: { lex: false },
   map: { extend: false },

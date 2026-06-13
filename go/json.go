@@ -67,8 +67,12 @@ func jsonOptions() tabnas.Options {
 			Exclude: func(s string) bool { return !strictNumber.MatchString(s) },
 		},
 		String: &tabnas.StringOptions{
-			Chars:        `"`,
-			MultiChars:   "",
+			Chars:      `"`,
+			MultiChars: "",
+			// AllowUnknown:false rejects any escape the engine does not
+			// recognize (e.g. \q, \z). The recognized escape set is the
+			// engine's hardcoded one, identical to the TS engine's — see
+			// AGENTS.md on the engine-imposed escape behavior.
 			AllowUnknown: &f,
 		},
 		Comment: &tabnas.CommentOptions{Lex: &f},

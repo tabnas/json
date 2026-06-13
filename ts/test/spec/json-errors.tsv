@@ -1,36 +1,38 @@
-input	expected
-{	ERROR
-[	ERROR
-{"a":1	ERROR
-[1	ERROR
-"abc	ERROR
-{"a"}	ERROR
-{"a":1,}	ERROR
-{,}	ERROR
-{"a":1 "b":2}	ERROR
-[1,]	ERROR
-[1 2]	ERROR
-'single'	ERROR
-{a:1}	ERROR
-[1,2,]	ERROR
-1 // note	ERROR
-a:1,b:2	ERROR
-x,y,z	ERROR
-1,2	ERROR
-0x10	ERROR
-.5	ERROR
-+1	ERROR
-True	ERROR
-tru	ERROR
-nul	ERROR
-1.	ERROR
-1e	ERROR
--	ERROR
-"a\xb"	ERROR
-"\u12"	ERROR
-"\uZZZZ"	ERROR
-01	ERROR
-00	ERROR
-123abc	ERROR
-[1,2]x	ERROR
-nullnull	ERROR
+input	code
+{	unexpected
+[	unexpected
+{"a":1	unexpected
+[1	unexpected
+"abc	unterminated_string
+{"a"}	unexpected
+{"a":1,}	unexpected
+{,}	unexpected
+{"a":1 "b":2}	unexpected
+[1,]	unexpected
+[1 2]	unexpected
+'single'	unexpected
+{a:1}	unexpected
+[1,2,]	unexpected
+1 // note	unexpected
+a:1,b:2	unexpected
+x,y,z	unexpected
+1,2	unexpected
+0x10	unexpected
+.5	unexpected
++1	unexpected
+True	unexpected
+tru	unexpected
+nul	unexpected
+1.	unexpected
+1e	unexpected
+-	unexpected
+"\xZZ"	invalid_ascii
+"\uZ"	invalid_unicode
+"\uZZZZ"	invalid_unicode
+"\q"	unexpected
+"a\zb"	unexpected
+01	unexpected
+00	unexpected
+123abc	unexpected
+[1,2]x	unexpected
+nullnull	unexpected

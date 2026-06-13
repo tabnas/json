@@ -73,13 +73,20 @@ func TestSpecValid(t *testing.T) {
 
 func TestSpecErrors(t *testing.T) {
 	for _, row := range loadTSV(t, "json-errors") {
-		input, expected := row[0], row[1]
-		if expected != "ERROR" {
-			t.Fatalf("error fixture %q has unexpected marker %q", input, expected)
-		}
+		input, code := row[0], row[1]
 		t.Run(input, func(t *testing.T) {
-			if _, err := Parse(input); err == nil {
-				t.Fatalf("Parse(%q) expected error, got nil", input)
+			_, err := Parse(input)
+			if err == nil {
+				t.Fatalf("Parse(%q) expected error %q, got nil", input, code)
+			}
+			je, ok := err.(*tabnas.TabnasError)
+			if !ok {
+				t.Fatalf("Parse(%q) returned %T, want *tabnas.TabnasError", input, err)
+			}
+			// The error code is part of the shared parity contract: both
+			// runtimes must reject with the same code.
+			if je.Code != code {
+				t.Fatalf("Parse(%q) code = %q, want %q", input, je.Code, code)
 			}
 			// Sanity: the standard library must also reject it.
 			var v any
