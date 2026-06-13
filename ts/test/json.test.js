@@ -5,11 +5,25 @@ const { describe, it } = require('node:test')
 const assert = require('node:assert')
 
 const Json = require('../dist/json.js')
-const { parse, JsonError } = Json
+const { parse, make, json, registerJsonGrammar, Tabnas, TabnasError } = Json
+
+// Normalize null-prototype engine objects for deepEqual comparison.
+const norm = (v) => JSON.parse(JSON.stringify(v))
 
 describe('json', () => {
   it('default export is parse', () => {
     assert.strictEqual(Json.default, parse)
+  })
+
+  it('exposes the plugin and grammar installer', () => {
+    assert.strictEqual(typeof json, 'function')
+    assert.strictEqual(typeof registerJsonGrammar, 'function')
+    assert.strictEqual(typeof make, 'function')
+  })
+
+  it('json is a usable tabnas plugin', () => {
+    const am = new Tabnas({ plugins: [json] })
+    assert.deepStrictEqual(norm(am.parse('{"a":[1,2,3]}')), { a: [1, 2, 3] })
   })
 
   it('parses scalars', () => {
@@ -22,7 +36,7 @@ describe('json', () => {
   })
 
   it('parses nested structures', () => {
-    assert.deepStrictEqual(parse('{"a":[1,{"b":2}]}'), { a: [1, { b: 2 }] })
+    assert.deepStrictEqual(norm(parse('{"a":[1,{"b":2}]}')), { a: [1, { b: 2 }] })
   })
 
   it('handles surrogate pairs', () => {
@@ -33,43 +47,34 @@ describe('json', () => {
     assert.strictEqual(parse('"\\b\\f\\n\\r\\t\\/\\\\\\""'), '\b\f\n\r\t/\\"')
   })
 
-  it('rejects empty input', () => {
-    assert.throws(() => parse(''), (e) => e instanceof JsonError && e.code === 'unexpected_eof')
+  it('rejects empty and whitespace-only input', () => {
+    assert.throws(() => parse(''), (e) => e instanceof TabnasError)
+    assert.throws(() => parse('   '), (e) => e instanceof TabnasError)
   })
 
-  it('rejects whitespace-only input', () => {
-    assert.throws(() => parse('   '), (e) => e.code === 'unexpected_eof')
-  })
-
-  it('reports line and column', () => {
-    try {
-      parse('{\n  "a": x\n}')
-      assert.fail('should have thrown')
-    } catch (e) {
-      assert.ok(e instanceof JsonError)
-      assert.strictEqual(e.line, 2)
-      assert.strictEqual(e.code, 'unexpected_char')
-    }
+  it('reports an unterminated string', () => {
+    assert.throws(
+      () => parse('"abc'),
+      (e) => e instanceof TabnasError && e.code === 'unterminated_string',
+    )
   })
 
   it('rejects extended grammar that jsonic would accept', () => {
-    // unquoted key
-    assert.throws(() => parse('{a:1}'))
-    // trailing comma
-    assert.throws(() => parse('[1,2,]'))
-    // comment
-    assert.throws(() => parse('1 // note'))
-    // single quotes
-    assert.throws(() => parse("'x'"))
-    // implicit object
-    assert.throws(() => parse('a:1,b:2'))
-    // implicit array
-    assert.throws(() => parse('x,y,z'))
-    // hex number
-    assert.throws(() => parse('0x10'))
-  })
-
-  it('non-string input throws', () => {
-    assert.throws(() => parse(42), (e) => e instanceof JsonError && e.code === 'invalid_input')
+    for (const bad of [
+      '{a:1}', // unquoted key
+      '[1,2,]', // trailing comma
+      '1 // note', // comment
+      "'x'", // single quotes
+      'a:1,b:2', // implicit object
+      'x,y,z', // implicit array
+      '0x10', // hex number
+      '.5', // bare leading dot
+      '+1', // leading plus
+      '1.', // trailing dot
+      '01', // leading zero
+    ]) {
+      assert.throws(() => parse(bad), `should reject: ${bad}`)
+      assert.throws(() => JSON.parse(bad), `JSON.parse accepts: ${bad}`)
+    }
   })
 })

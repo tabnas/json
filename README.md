@@ -1,59 +1,99 @@
 # json
 
-A standard JSON parser — strict, fast, and dependency-free — for
-TypeScript/JavaScript and Go.
+A standard JSON parser for TypeScript/JavaScript and Go, built as a
+grammar plugin for the [`tabnas`](https://github.com/tabnas/parser)
+parsing engine.
 
 ```
-{"a":1,"foo":"bar"}  →  { a: 1, foo: 'bar' }
+{"a":1,"b":[2,3]}  →  { a: 1, b: [2, 3] }
 ```
 
-This parser implements exactly the JSON grammar defined by
+This package implements exactly the JSON grammar defined by
 [RFC 8259](https://www.rfc-editor.org/rfc/rfc8259) / ECMA-404 and nothing
-more. It accepts objects, arrays, strings, numbers, and the literals
-`true`, `false` and `null`. It rejects everything an extended grammar
-would relax: comments, trailing commas, unquoted keys, single-quoted and
-multiline strings, implicit objects and arrays, hex/octal numbers. If
-`JSON.parse` (TS/JS) or `encoding/json` (Go) would reject the input, so
-does this parser.
+more: objects, arrays, strings, numbers, and the literals `true`, `false`
+and `null`. It rejects everything an extended grammar would relax —
+comments, trailing commas, unquoted keys, single-quoted and multiline
+strings, implicit objects and arrays, hex/octal numbers, leading zeros.
+If `JSON.parse` (TS/JS) or `encoding/json` (Go) would reject the input,
+so does this parser.
 
-> This repository began life from the
-> [`tabnas/jsonic`](https://github.com/tabnas/jsonic) template — a
-> lenient, extensible JSON parser — and was refactored down to a standard
-> JSON parser by removing the extended grammar in both runtimes.
+## How it works
+
+The [`tabnas`](https://github.com/tabnas/parser) engine ships **no
+grammar**; every grammar is a plugin. This package supplies the
+standard-JSON grammar plugin for both runtimes. The rule set
+(`val` / `map` / `list` / `pair` / `elem`) is the **"Plain JSON"** grammar
+from [`jsonic`](https://github.com/tabnas/jsonic) — the pure-JSON core
+jsonic defines before extending it for the relaxed jsonic format. Here
+that core is installed on its own, with the lexer restricted to strict
+JSON.
+
+> This repository began from the
+> [`tabnas/jsonic`](https://github.com/tabnas/jsonic) template and was
+> refactored down to a standard JSON parser: it keeps jsonic's Plain JSON
+> grammar and drops the extended grammar, in both TS and Go.
+
+Because it is a plain grammar plugin on the shared engine, it is intended
+to be the **foundation other tabnas parsers build on**: `use` it first,
+then layer additional rules on the shared `val` / `map` / `list` /
+`pair` / `elem` rules.
 
 ## Choose your runtime
 
 | Runtime | Start here |
 |---|---|
-| **TypeScript / JavaScript** | [`ts/README.md`](ts/README.md) |
+| **TypeScript / JavaScript** (`@tabnas/json`) | [`ts/README.md`](ts/README.md) |
 | **Go** (`github.com/tabnas/json/go`) | [`go/README.md`](go/README.md) |
 
-Both runtimes are self-contained — no parsing-engine dependency — and
-produce identical results. TypeScript is canonical: both suites run the
-shared conformance fixtures in [`ts/test/spec/`](ts/test/spec/).
+Both runtimes are grammar plugins on the `tabnas` engine — the TypeScript
+package on the `tabnas` npm package, the Go module on
+`github.com/tabnas/parser/go`. TypeScript is canonical: both suites run
+the shared conformance fixtures in [`ts/test/spec/`](ts/test/spec/).
 
 ## Quick example
 
 TypeScript / JavaScript:
 
 ```ts
-import { parse } from '@tabnas/json'
+import { parse, json } from '@tabnas/json'
 
 parse('{"a":1,"b":[2,3]}') // { a: 1, b: [2, 3] }
+
+// or install the plugin on your own engine instance:
+import { Tabnas } from 'tabnas'
+const am = new Tabnas({ plugins: [json] })
+am.parse('[1,2,3]')
 ```
 
 Go:
 
 ```go
-import json "github.com/tabnas/json/go"
+import (
+	json "github.com/tabnas/json/go"
+	tabnas "github.com/tabnas/parser/go"
+)
 
 v, err := json.Parse(`{"a":1,"b":[2,3]}`)
+
+// or install the plugin on your own engine instance:
+j := tabnas.Make()
+j.Use(json.Json)
+v, err = j.Parse(`[1,2,3]`)
 ```
 
-## Contributing
+## Building locally
 
-Each directory has an `AGENTS.md` with build, layout, and contribution
-notes; start with [`AGENTS.md`](AGENTS.md).
+This package depends on the `tabnas` engine as a sibling checkout (the
+same model jsonic uses), until `tabnas/parser` publishes tagged packages:
+
+```bash
+git clone https://github.com/tabnas/parser     # sibling of this repo
+git clone https://github.com/tabnas/json
+```
+
+Then build the engine first and run each runtime's tests — see
+[`AGENTS.md`](AGENTS.md) and the per-runtime READMEs. CI does this
+automatically (`.github/workflows/build.yml`).
 
 ## License
 

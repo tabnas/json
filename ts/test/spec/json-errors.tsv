@@ -1,28 +1,36 @@
 input	expected
-{	ERROR:unexpected_eof
-[	ERROR:unexpected_eof
-{"a":1	ERROR:unexpected_eof
-[1	ERROR:unexpected_eof
-"abc	ERROR:unterminated_string
-{"a"}	ERROR:expected_colon
-{"a":1,}	ERROR:expected_key
-{,}	ERROR:expected_key
-{"a":1 "b":2}	ERROR:expected_comma
-[1,]	ERROR:unexpected_char
-[1 2]	ERROR:expected_comma
-'single'	ERROR:unexpected_char
-.5	ERROR:unexpected_char
-+1	ERROR:unexpected_char
-True	ERROR:unexpected_char
-tru	ERROR:invalid_literal
-nul	ERROR:invalid_literal
-1.	ERROR:invalid_number
-1e	ERROR:invalid_number
--	ERROR:invalid_number
-"a\xb"	ERROR:invalid_escape
-"\u12"	ERROR:invalid_unicode
-"\uZZZZ"	ERROR:invalid_unicode
-01	ERROR:trailing_content
-123abc	ERROR:trailing_content
-[1,2]x	ERROR:trailing_content
-nullnull	ERROR:trailing_content
+{	ERROR
+[	ERROR
+{"a":1	ERROR
+[1	ERROR
+"abc	ERROR
+{"a"}	ERROR
+{"a":1,}	ERROR
+{,}	ERROR
+{"a":1 "b":2}	ERROR
+[1,]	ERROR
+[1 2]	ERROR
+'single'	ERROR
+{a:1}	ERROR
+[1,2,]	ERROR
+1 // note	ERROR
+a:1,b:2	ERROR
+x,y,z	ERROR
+1,2	ERROR
+0x10	ERROR
+.5	ERROR
++1	ERROR
+True	ERROR
+tru	ERROR
+nul	ERROR
+1.	ERROR
+1e	ERROR
+-	ERROR
+"a\xb"	ERROR
+"\u12"	ERROR
+"\uZZZZ"	ERROR
+01	ERROR
+00	ERROR
+123abc	ERROR
+[1,2]x	ERROR
+nullnull	ERROR

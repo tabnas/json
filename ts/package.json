@@ -33,6 +33,9 @@
   "exports": {
     ".": "./dist/json.js"
   },
+  "dependencies": {
+    "tabnas": "file:../../parser/ts"
+  },
   "devDependencies": {
     "@types/node": "20.x",
     "typescript": "5.x"

@@ -4,33 +4,42 @@
 const { describe, it } = require('node:test')
 const assert = require('node:assert')
 
-const { parse, JsonError } = require('../dist/json.js')
+const { parse, TabnasError } = require('../dist/json.js')
 const { loadTSV } = require('./utility')
 
 // Run a shared .tsv fixture. Valid rows assert that re-serializing the
-// parsed value matches the expected JSON; error rows assert that a
-// JsonError with the expected code is thrown.
+// parsed value matches the expected JSON (and the platform JSON.parse);
+// error rows assert that parsing throws. Error codes are engine-specific
+// and differ across runtimes (see AGENTS.md), so the shared contract is
+// "rejects this input", not a particular code.
 function runSpec(name) {
   for (const { row, cols } of loadTSV(name)) {
     const [input, expected] = cols
-    if (expected.startsWith('ERROR:')) {
-      const code = expected.slice('ERROR:'.length)
-      it(`${name} row ${row}: ${input} -> ${expected}`, () => {
+    if (expected === 'ERROR') {
+      it(`${name} row ${row}: ${input} -> ERROR`, () => {
         assert.throws(
           () => parse(input),
           (err) => {
-            assert.ok(err instanceof JsonError, `expected JsonError, got ${err}`)
-            assert.strictEqual(err.code, code, `input: ${input}`)
+            assert.ok(
+              err instanceof TabnasError,
+              `expected TabnasError, got ${err}`,
+            )
             return true
           },
         )
+        // The platform parser must also reject it.
+        assert.throws(() => JSON.parse(input), `JSON.parse accepted: ${input}`)
       })
     } else {
       it(`${name} row ${row}: ${input}`, () => {
         const value = parse(input)
         assert.strictEqual(JSON.stringify(value), expected, `input: ${input}`)
-        // Cross-check against the platform JSON.parse for valid cases.
-        assert.deepStrictEqual(value, JSON.parse(input), `input: ${input}`)
+        // Cross-check against the platform JSON.parse.
+        assert.strictEqual(
+          JSON.stringify(value),
+          JSON.stringify(JSON.parse(input)),
+          `input: ${input}`,
+        )
       })
     }
   }
