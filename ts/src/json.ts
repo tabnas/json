@@ -146,7 +146,7 @@ export function registerJsonGrammar(am: Tabnas): void {
       },
 
       '@elem-bc': (r: Rule) => {
-        if (true !== r.u.done && undefined !== r.child.node) {
+        if (undefined !== r.child.node) {
           r.node.push(r.child.node)
         }
       },

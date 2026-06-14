@@ -84,6 +84,35 @@ strings, implicit objects/arrays, hex/octal/binary numbers, leading
 zeros, a leading `+`, a bare `.5` or trailing `1.`, and empty input.
 This matches the platform `JSON.parse`.
 
+Parsed objects use a **null prototype** (`Object.create(null)`): this is
+deliberate and prototype-pollution-safe — a `"__proto__"` key becomes a
+normal own property rather than mutating the prototype. The only visible
+difference from `JSON.parse` is the missing `Object.prototype` (so e.g.
+`obj.hasOwnProperty` is `undefined`; use `Object.hasOwn(obj, k)`).
+
+## Extending the grammar
+
+Because this is a plain grammar plugin on the shared engine, it is a
+foundation to build other parsers on. Layer options or rules on top of
+the `json` plugin. For example, a JSON-with-comments (JSONC) parser is
+just the JSON grammar with comment lexing re-enabled:
+
+```ts
+import { Tabnas } from 'tabnas'
+import { json } from '@tabnas/json'
+
+const jsonc = new Tabnas({ plugins: [json] })
+jsonc.options({ comment: { lex: true } })
+jsonc.parse('{"a":1} // ok')      // { a: 1 }
+jsonc.parse('{"a":/* ok */1}')    // { a: 1 }
+```
+
+For deeper changes, call `registerJsonGrammar(am)` to install just the
+rules, then use the engine's rule API (`am.rule(...)`, and the
+`clearOpen` / `clearClose` / `@<rule>-<phase>/replace` hooks) to replace
+or extend the shared `val` / `map` / `list` / `pair` / `elem` rules
+without re-declaring the JSON core.
+
 ## Errors
 
 On invalid input, `parse` throws a `TabnasError` (also exported as

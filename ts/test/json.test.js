@@ -63,6 +63,15 @@ describe('json', () => {
     assert.strictEqual(textMark.value.quote, '"')
   })
 
+  it('serves as a foundation: JSONC by layering comment lexing', () => {
+    const jsonc = new Tabnas({ plugins: [json] })
+    jsonc.options({ comment: { lex: true } })
+    assert.deepStrictEqual(norm(jsonc.parse('{"a":1} // note')), { a: 1 })
+    assert.deepStrictEqual(norm(jsonc.parse('{"a":/* x */2}')), { a: 2 })
+    // The base json parser still rejects comments.
+    assert.throws(() => parse('{"a":1}//c'))
+  })
+
   it('parses scalars', () => {
     assert.strictEqual(parse('42'), 42)
     assert.strictEqual(parse('-3.14'), -3.14)
