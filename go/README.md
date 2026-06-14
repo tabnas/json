@@ -61,6 +61,18 @@ v, err := j.Parse(`{"a":[1,2,3]}`)
 `pair` / `elem` rules (jsonic's "Plain JSON" core) for plugins that want
 to build on the JSON rule set.
 
+## Reuse and options
+
+`Parse` reuses a single lazily-created instance (safe for concurrent use,
+since each parse builds its own context), so you don't rebuild the grammar
+on every call. To customize, build your own instance with `Make(extra ...Options)`:
+
+```go
+tr := true
+p := json.Make(tabnas.Options{Info: &tabnas.InfoOptions{Map: &tr, List: &tr}})
+p.Parse(`{"a":[1,2]}`)
+```
+
 ## What it accepts
 
 Exactly standard JSON — objects with double-quoted string keys, arrays,

@@ -49,6 +49,22 @@ am.parse('{"a":[1,2,3]}')
 `pair` / `elem` rules (jsonic's "Plain JSON" core) without the strict
 options, for plugins that want to build on the JSON rule set.
 
+## Reuse and options
+
+`parse` reuses a single lazily-created instance, so you don't pay to
+rebuild the grammar on every call. To customize, build your own instance
+with `make(opts?)` — extra options (e.g. the `info` metadata options) are
+applied on top of the strict JSON config:
+
+```ts
+import { make } from '@tabnas/json'
+
+const p = make({ info: { map: true, list: true } })
+p.parse('{"a":[1,2]}')
+```
+
+`Version` is exported as the package version string.
+
 ## What it accepts
 
 Exactly standard JSON:

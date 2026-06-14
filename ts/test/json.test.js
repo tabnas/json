@@ -5,7 +5,8 @@ const { describe, it } = require('node:test')
 const assert = require('node:assert')
 
 const Json = require('../dist/json.js')
-const { parse, make, json, registerJsonGrammar, Tabnas, TabnasError } = Json
+const { parse, make, json, registerJsonGrammar, Tabnas, TabnasError, Version } =
+  Json
 
 // Normalize null-prototype engine objects for deepEqual comparison.
 const norm = (v) => JSON.parse(JSON.stringify(v))
@@ -19,6 +20,18 @@ describe('json', () => {
     assert.strictEqual(typeof json, 'function')
     assert.strictEqual(typeof registerJsonGrammar, 'function')
     assert.strictEqual(typeof make, 'function')
+  })
+
+  it('exports a Version string', () => {
+    assert.strictEqual(typeof Version, 'string')
+    assert.match(Version, /^\d+\.\d+\.\d+$/)
+  })
+
+  it('make(opts) applies extra options after the grammar', () => {
+    const am = make({ info: { map: true } })
+    const out = am.parse('{"a":1}')
+    const mark = Object.getOwnPropertyDescriptor(out, '__info__')
+    assert.strictEqual(mark.value.implicit, false)
   })
 
   it('json is a usable tabnas plugin', () => {
