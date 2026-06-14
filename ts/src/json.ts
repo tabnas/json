@@ -27,6 +27,9 @@ import {
   type Rule,
 } from 'tabnas'
 
+// Current package version.
+export const Version = '1.0.0'
+
 const defprop = Object.defineProperty
 
 // Attach a hidden marker property to a node — used when info.map /
@@ -143,7 +146,7 @@ export function registerJsonGrammar(am: Tabnas): void {
       },
 
       '@elem-bc': (r: Rule) => {
-        if (true !== r.u.done && undefined !== r.child.node) {
+        if (undefined !== r.child.node) {
           r.node.push(r.child.node)
         }
       },
@@ -249,15 +252,25 @@ export const json: Plugin = function json(am: Tabnas, _options?: any) {
 }
 
 // Create a standard-JSON parser instance: a tabnas engine with the json
-// plugin installed.
-export function make(): Tabnas {
-  return new Tabnas({ plugins: [json] })
+// plugin installed. Extra options (e.g. info.map/list/text) are applied
+// after the grammar exists, mirroring the Go `Make`.
+export function make(opts?: Record<string, any>): Tabnas {
+  const am = new Tabnas({ plugins: [json] })
+  if (opts) {
+    am.options(opts)
+  }
+  return am
 }
+
+// A lazily-created default instance reused by `parse`, so repeated calls
+// don't rebuild the engine and grammar each time. Parsing creates a fresh
+// context per call, so reuse is safe.
+let defaultParser: Tabnas | undefined
 
 // Parse a JSON source string with a default standard-JSON parser and
 // return the resulting value. Throws a TabnasError on invalid input.
 export function parse(src: string): any {
-  return make().parse(src)
+  return (defaultParser ??= make()).parse(src)
 }
 
 export { Tabnas, TabnasError }

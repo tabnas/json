@@ -19,7 +19,9 @@
 package json
 
 import (
+	"math"
 	"regexp"
+	"sync"
 
 	tabnas "github.com/tabnas/parser/go"
 )
@@ -84,6 +86,11 @@ func jsonOptions() tabnas.Options {
 		Map:     &tabnas.MapOptions{Extend: &f},
 		Lex:     &tabnas.LexOptions{Empty: &f},
 		Rule:    &tabnas.RuleOptions{Finish: &f},
+		// Treat a "no value" / NaN result as a parse failure, mirroring the
+		// TS result.fail. Undefined is the engine's "no value" sentinel
+		// (not nil — JSON null parses to nil and must stay valid); NaN
+		// never matches via ==, included only for TS parity.
+		Result: &tabnas.ResultOptions{Fail: []any{tabnas.Undefined, math.NaN()}},
 		// Strict JSON keys are quoted strings only.
 		TokenSet: map[string][]string{"KEY": {"#ST"}},
 	}
@@ -252,8 +259,18 @@ func Make(extra ...tabnas.Options) *tabnas.Tabnas {
 	return j
 }
 
+// defaultParser is a lazily-created instance reused by Parse, so repeated
+// calls don't rebuild the engine and grammar each time. Parsing builds a
+// fresh context per call and only reads instance state, so the shared
+// instance is safe for concurrent use.
+var (
+	defaultOnce   sync.Once
+	defaultParser *tabnas.Tabnas
+)
+
 // Parse parses a JSON source string with a default standard-JSON parser
 // and returns the resulting value, or a *tabnas.TabnasError on failure.
 func Parse(src string) (any, error) {
-	return Make().Parse(src)
+	defaultOnce.Do(func() { defaultParser = Make() })
+	return defaultParser.Parse(src)
 }

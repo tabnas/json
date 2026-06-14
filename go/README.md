@@ -61,6 +61,18 @@ v, err := j.Parse(`{"a":[1,2,3]}`)
 `pair` / `elem` rules (jsonic's "Plain JSON" core) for plugins that want
 to build on the JSON rule set.
 
+## Reuse and options
+
+`Parse` reuses a single lazily-created instance (safe for concurrent use,
+since each parse builds its own context), so you don't rebuild the grammar
+on every call. To customize, build your own instance with `Make(extra ...Options)`:
+
+```go
+tr := true
+p := json.Make(tabnas.Options{Info: &tabnas.InfoOptions{Map: &tr, List: &tr}})
+p.Parse(`{"a":[1,2]}`)
+```
+
 ## What it accepts
 
 Exactly standard JSON — objects with double-quoted string keys, arrays,
@@ -70,6 +82,26 @@ It rejects everything outside that grammar (comments, trailing commas,
 unquoted keys, single quotes, implicit structures, hex numbers, leading
 zeros, `.5`, `1.`, `+1`, empty input) — the same surface as
 `encoding/json`.
+
+## Extending the grammar
+
+Because this is a plain grammar plugin on the shared engine, it is a
+foundation to build other parsers on. Layer options or rules on top of
+the JSON grammar. For example, a JSON-with-comments (JSONC) parser is just
+the JSON grammar with comment lexing re-enabled:
+
+```go
+tr := true
+jsonc := json.Make(tabnas.Options{Comment: &tabnas.CommentOptions{Lex: &tr}})
+jsonc.Parse(`{"a":1} // ok`)    // map[string]any{"a": 1}
+jsonc.Parse(`{"a":/* ok */1}`)  // map[string]any{"a": 1}
+```
+
+For deeper changes, call `RegisterJSONGrammar(j)` to install just the
+rules, then use the engine's rule API (`j.Rule(...)`, and the `ClearOpen`
+/ `ClearClose` / `@<rule>-<phase>/replace` hooks) to replace or extend the
+shared `val` / `map` / `list` / `pair` / `elem` rules without re-declaring
+the JSON core.
 
 ## Errors
 

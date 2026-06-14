@@ -177,6 +177,26 @@ func TestInfoOptions(t *testing.T) {
 	}
 }
 
+func TestComposeJSONC(t *testing.T) {
+	// The JSON grammar is a foundation: layering comment lexing on top
+	// yields a JSON-with-comments parser (the documented example).
+	tr := true
+	jc := Make(tabnas.Options{Comment: &tabnas.CommentOptions{Lex: &tr}})
+	for _, s := range []string{`{"a":1} // note`, `{"a":/* x */1}`} {
+		out, err := jc.Parse(s)
+		if err != nil {
+			t.Fatalf("Parse(%q): %v", s, err)
+		}
+		if canon(t, out) != `{"a":1}` {
+			t.Fatalf("Parse(%q) = %s, want {\"a\":1}", s, canon(t, out))
+		}
+	}
+	// The base json parser still rejects comments.
+	if _, err := Parse(`{"a":1}//c`); err == nil {
+		t.Fatal("base json accepted a comment")
+	}
+}
+
 func TestRejectsExtendedGrammar(t *testing.T) {
 	// Inputs jsonic accepts but standard JSON does not.
 	for _, in := range []string{

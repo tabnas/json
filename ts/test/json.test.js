@@ -5,7 +5,8 @@ const { describe, it } = require('node:test')
 const assert = require('node:assert')
 
 const Json = require('../dist/json.js')
-const { parse, make, json, registerJsonGrammar, Tabnas, TabnasError } = Json
+const { parse, make, json, registerJsonGrammar, Tabnas, TabnasError, Version } =
+  Json
 
 // Normalize null-prototype engine objects for deepEqual comparison.
 const norm = (v) => JSON.parse(JSON.stringify(v))
@@ -19,6 +20,18 @@ describe('json', () => {
     assert.strictEqual(typeof json, 'function')
     assert.strictEqual(typeof registerJsonGrammar, 'function')
     assert.strictEqual(typeof make, 'function')
+  })
+
+  it('exports a Version string', () => {
+    assert.strictEqual(typeof Version, 'string')
+    assert.match(Version, /^\d+\.\d+\.\d+$/)
+  })
+
+  it('make(opts) applies extra options after the grammar', () => {
+    const am = make({ info: { map: true } })
+    const out = am.parse('{"a":1}')
+    const mark = Object.getOwnPropertyDescriptor(out, '__info__')
+    assert.strictEqual(mark.value.implicit, false)
   })
 
   it('json is a usable tabnas plugin', () => {
@@ -48,6 +61,15 @@ describe('json', () => {
     assert.strictEqual(String(out.a[0]), 'x')
     const textMark = Object.getOwnPropertyDescriptor(out.a[0], '__info__')
     assert.strictEqual(textMark.value.quote, '"')
+  })
+
+  it('serves as a foundation: JSONC by layering comment lexing', () => {
+    const jsonc = new Tabnas({ plugins: [json] })
+    jsonc.options({ comment: { lex: true } })
+    assert.deepStrictEqual(norm(jsonc.parse('{"a":1} // note')), { a: 1 })
+    assert.deepStrictEqual(norm(jsonc.parse('{"a":/* x */2}')), { a: 2 })
+    // The base json parser still rejects comments.
+    assert.throws(() => parse('{"a":1}//c'))
   })
 
   it('parses scalars', () => {
