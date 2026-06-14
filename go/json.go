@@ -97,18 +97,24 @@ func jsonOptions() tabnas.Options {
 }
 
 // RegisterJSONGrammar installs the standard JSON rule set (val / map /
-// list / pair / elem) on j. Exposed separately from the options so other
-// grammar plugins can layer on the JSON core. cfg is read for the info
-// (MapRef / ListRef / Text) settings.
-func RegisterJSONGrammar(j *tabnas.Tabnas) {
+// list / pair / elem) on j via the engine's declarative grammar spec —
+// the same shape as the TypeScript registerJsonGrammar. Exposed
+// separately from the options so other grammar plugins can layer on the
+// JSON core. cfg is read for the info (MapRef / ListRef / Text) settings.
+func RegisterJSONGrammar(j *tabnas.Tabnas) error {
 	cfg := j.Config()
 
-	// val: a value is a map, a list, or a plain scalar token.
-	j.Rule("val", func(rs *tabnas.RuleSpec, _ *tabnas.Parser) {
-		rs.BO = []tabnas.StateAction{func(r *tabnas.Rule, ctx *tabnas.Context) {
+	ref := map[tabnas.FuncRef]any{
+		// Strict JSON keys are quoted strings (the KEY token set is
+		// restricted to #ST), so the key value is the decoded string.
+		"@pairkey": tabnas.AltAction(func(r *tabnas.Rule, ctx *tabnas.Context) {
+			r.U["key"], _ = r.O0.Val.(string)
+		}),
+
+		"@val-bo": tabnas.StateAction(func(r *tabnas.Rule, ctx *tabnas.Context) {
 			r.Node = tabnas.Undefined
-		}}
-		rs.BC = []tabnas.StateAction{func(r *tabnas.Rule, ctx *tabnas.Context) {
+		}),
+		"@val-bc": tabnas.StateAction(func(r *tabnas.Rule, ctx *tabnas.Context) {
 			// A map/list child node wins; otherwise the value is the scalar
 			// token. (The strict lexer guarantees a value rule always has
 			// one or the other — there are no empty values to coalesce.)
@@ -126,130 +132,131 @@ func RegisterJSONGrammar(j *tabnas.Tabnas) {
 				val = tabnas.Text{Quote: quote, Str: str}
 			}
 			r.Node = val
-		}}
-		rs.Open = []*tabnas.AltSpec{
-			{S: [][]tabnas.Tin{{tabnas.TinOB}}, P: "map", B: 1, G: "map,json"},
-			{S: [][]tabnas.Tin{{tabnas.TinOS}}, P: "list", B: 1, G: "list,json"},
-			{S: [][]tabnas.Tin{tabnas.TinSetVAL}, G: "val,json"},
-		}
-		rs.Close = []*tabnas.AltSpec{
-			{S: [][]tabnas.Tin{{tabnas.TinZZ}}, G: "end,json"},
-			{B: 1, G: "more,json"},
-		}
-	})
+		}),
 
-	// map: an object.
-	j.Rule("map", func(rs *tabnas.RuleSpec, _ *tabnas.Parser) {
-		rs.BO = []tabnas.StateAction{func(r *tabnas.Rule, ctx *tabnas.Context) {
+		"@map-bo": tabnas.StateAction(func(r *tabnas.Rule, ctx *tabnas.Context) {
 			if cfg.MapRef {
 				r.Node = tabnas.MapRef{Val: make(map[string]any), Meta: make(map[string]any)}
 			} else {
 				r.Node = make(map[string]any)
 			}
-		}}
-		rs.BC = []tabnas.StateAction{func(r *tabnas.Rule, ctx *tabnas.Context) {
+		}),
+		"@map-bc": tabnas.StateAction(func(r *tabnas.Rule, ctx *tabnas.Context) {
 			if cfg.MapRef {
 				if mr, ok := r.Node.(tabnas.MapRef); ok {
 					mr.Implicit = !(r.O0 != tabnas.NoToken && r.O0.Tin == tabnas.TinOB)
 					r.Node = mr
 				}
 			}
-		}}
-		rs.Open = []*tabnas.AltSpec{
-			{S: [][]tabnas.Tin{{tabnas.TinOB}, {tabnas.TinCB}}, B: 1, N: map[string]int{"pk": 0}, G: "map,json"},
-			{S: [][]tabnas.Tin{{tabnas.TinOB}}, P: "pair", N: map[string]int{"pk": 0}, G: "map,json,pair"},
-		}
-		rs.Close = []*tabnas.AltSpec{
-			{S: [][]tabnas.Tin{{tabnas.TinCB}}, G: "end,json"},
-		}
-	})
+		}),
 
-	// list: an array.
-	j.Rule("list", func(rs *tabnas.RuleSpec, _ *tabnas.Parser) {
-		rs.BO = []tabnas.StateAction{func(r *tabnas.Rule, ctx *tabnas.Context) {
+		"@list-bo": tabnas.StateAction(func(r *tabnas.Rule, ctx *tabnas.Context) {
 			if cfg.ListRef {
 				r.Node = tabnas.ListRef{Val: make([]any, 0), Meta: make(map[string]any)}
 			} else {
 				r.Node = make([]any, 0)
 			}
-		}}
-		rs.BC = []tabnas.StateAction{func(r *tabnas.Rule, ctx *tabnas.Context) {
+		}),
+		"@list-bc": tabnas.StateAction(func(r *tabnas.Rule, ctx *tabnas.Context) {
 			if cfg.ListRef {
 				if lr, ok := r.Node.(tabnas.ListRef); ok {
 					lr.Implicit = !(r.O0 != tabnas.NoToken && r.O0.Tin == tabnas.TinOS)
 					r.Node = lr
 				}
 			}
-		}}
-		rs.Open = []*tabnas.AltSpec{
-			{S: [][]tabnas.Tin{{tabnas.TinOS}, {tabnas.TinCS}}, B: 1, G: "list,json"},
-			{S: [][]tabnas.Tin{{tabnas.TinOS}}, P: "elem", G: "list,elem,json"},
-		}
-		rs.Close = []*tabnas.AltSpec{
-			{S: [][]tabnas.Tin{{tabnas.TinCS}}, G: "end,json"},
-		}
-	})
+		}),
 
-	// pair: a key:value entry inside a map.
-	j.Rule("pair", func(rs *tabnas.RuleSpec, _ *tabnas.Parser) {
-		rs.BC = []tabnas.StateAction{func(r *tabnas.Rule, ctx *tabnas.Context) {
+		"@pair-bc": tabnas.StateAction(func(r *tabnas.Rule, ctx *tabnas.Context) {
 			if _, ok := r.U["pair"]; ok {
 				key, _ := r.U["key"].(string)
 				r.Node = jsonMapSet(r.Node, key, r.Child.Node)
 			}
-		}}
-		rs.Open = []*tabnas.AltSpec{
-			{
-				S: [][]tabnas.Tin{{tabnas.TinST}, {tabnas.TinCL}},
-				P: "val",
-				U: map[string]any{"pair": true},
-				G: "map,pair,key,json",
-				A: func(r *tabnas.Rule, ctx *tabnas.Context) {
-					// Strict JSON keys are quoted strings (the KEY token set
-					// is restricted to #ST), so the key value is the string.
-					r.U["key"], _ = r.O0.Val.(string)
-				},
-			},
-		}
-		rs.Close = []*tabnas.AltSpec{
-			{S: [][]tabnas.Tin{{tabnas.TinCA}}, R: "pair", G: "map,pair,json"},
-			{S: [][]tabnas.Tin{{tabnas.TinCB}}, B: 1, G: "map,pair,json"},
-		}
-	})
+		}),
 
-	// elem: a value inside a list.
-	j.Rule("elem", func(rs *tabnas.RuleSpec, _ *tabnas.Parser) {
-		rs.BC = []tabnas.StateAction{func(r *tabnas.Rule, ctx *tabnas.Context) {
+		"@elem-bc": tabnas.StateAction(func(r *tabnas.Rule, ctx *tabnas.Context) {
 			if !tabnas.IsUndefined(r.Child.Node) {
 				r.Node = jsonListAppend(r.Node, r.Child.Node)
 				if r.Parent != tabnas.NoRule && r.Parent != nil {
 					r.Parent.Node = r.Node
 				}
 			}
-		}}
-		rs.Open = []*tabnas.AltSpec{
-			{P: "val", G: "list,elem,val,json"},
-		}
-		rs.Close = []*tabnas.AltSpec{
-			{S: [][]tabnas.Tin{{tabnas.TinCA}}, R: "elem", G: "list,elem,json"},
-			{S: [][]tabnas.Tin{{tabnas.TinCS}}, B: 1, G: "list,elem,json"},
-		}
-	})
+		}),
+	}
+
+	rules := map[string]*tabnas.GrammarRuleSpec{
+		// val: a value is a map, a list, or a plain scalar token.
+		"val": {
+			Open: []*tabnas.GrammarAltSpec{
+				{S: "#OB", P: "map", B: 1, G: "map,json"},
+				{S: "#OS", P: "list", B: 1, G: "list,json"},
+				{S: "#VAL", G: "val,json"},
+			},
+			Close: []*tabnas.GrammarAltSpec{
+				{S: "#ZZ", G: "end,json"},
+				{B: 1, G: "more,json"},
+			},
+		},
+		// map: an object.
+		"map": {
+			Open: []*tabnas.GrammarAltSpec{
+				{S: "#OB #CB", B: 1, N: map[string]int{"pk": 0}, G: "map,json"},
+				{S: "#OB", P: "pair", N: map[string]int{"pk": 0}, G: "map,json,pair"},
+			},
+			Close: []*tabnas.GrammarAltSpec{
+				{S: "#CB", G: "end,json"},
+			},
+		},
+		// list: an array.
+		"list": {
+			Open: []*tabnas.GrammarAltSpec{
+				{S: "#OS #CS", B: 1, G: "list,json"},
+				{S: "#OS", P: "elem", G: "list,elem,json"},
+			},
+			Close: []*tabnas.GrammarAltSpec{
+				{S: "#CS", G: "end,json"},
+			},
+		},
+		// pair: a key:value entry inside a map.
+		"pair": {
+			Open: []*tabnas.GrammarAltSpec{
+				{S: "#KEY #CL", P: "val", U: map[string]any{"pair": true}, A: "@pairkey", G: "map,pair,key,json"},
+			},
+			Close: []*tabnas.GrammarAltSpec{
+				{S: "#CA", R: "pair", G: "map,pair,json"},
+				{S: "#CB", B: 1, G: "map,pair,json"},
+			},
+		},
+		// elem: a value inside a list.
+		"elem": {
+			Open: []*tabnas.GrammarAltSpec{
+				{P: "val", G: "list,elem,val,json"},
+			},
+			Close: []*tabnas.GrammarAltSpec{
+				{S: "#CA", R: "elem", G: "list,elem,json"},
+				{S: "#CS", B: 1, G: "list,elem,json"},
+			},
+		},
+	}
+
+	return j.Grammar(&tabnas.GrammarSpec{Ref: ref, Rule: rules})
 }
 
 // Json is the standard plugin form: apply the strict JSON options, then
 // register the JSON grammar. Use it on a bare engine, or call Make.
 func Json(j *tabnas.Tabnas, _ map[string]any) error {
 	j.SetOptions(jsonOptions())
-	RegisterJSONGrammar(j)
-	return nil
+	return RegisterJSONGrammar(j)
 }
 
 // Make builds a standard-JSON parser instance, optionally layering extra
 // options (e.g. info.Map/List/Text) over the base strict configuration.
 func Make(extra ...tabnas.Options) *tabnas.Tabnas {
 	j := tabnas.Make(jsonOptions())
-	RegisterJSONGrammar(j)
+	if err := RegisterJSONGrammar(j); err != nil {
+		// The grammar spec is fixed and valid, so this only fires on a
+		// programmer error while editing the grammar.
+		panic(err)
+	}
 	// Extra options are applied after the grammar exists so that rule
 	// include/exclude filters operate on the installed alternates (and
 	// info options reach the config the grammar closures captured).
