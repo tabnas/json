@@ -27,7 +27,7 @@ parse('{"a": {"b": [true, null]}}')  // { a: { b: [true, null] } }
 
 ```js
 const { parse } = require('@tabnas/json')
-parse('"hello"') // "hello"
+parse('"hello"') // => "hello"
 ```
 
 `parse` is also the default export.
