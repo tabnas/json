@@ -33,18 +33,18 @@ const skip = Debug ? false : '@tabnas/debug not available (set TABNAS_DEBUG_PATH
 
 describe('compose: json + @tabnas/debug', () => {
   it('parses normally with the debug plugin installed', { skip }, () => {
-    const am = new Tabnas({ plugins: [json] })
-    am.use(Debug, { print: false, trace: false })
+    const tn = new Tabnas({ plugins: [json] })
+    tn.use(Debug, { print: false, trace: false })
     assert.deepStrictEqual(
-      JSON.parse(JSON.stringify(am.parse('{"a":[1,2]}'))),
+      JSON.parse(JSON.stringify(tn.parse('{"a":[1,2]}'))),
       { a: [1, 2] },
     )
   })
 
   it('debug.describe() introspects the JSON grammar', { skip }, () => {
-    const am = new Tabnas({ plugins: [json] })
-    am.use(Debug, { print: false, trace: false })
-    const desc = am.debug.describe()
+    const tn = new Tabnas({ plugins: [json] })
+    tn.use(Debug, { print: false, trace: false })
+    const desc = tn.debug.describe()
     // The shared val / map / list / pair / elem rules are present.
     for (const rule of ['val', 'map', 'list', 'pair', 'elem']) {
       assert.match(desc, new RegExp('\\b' + rule + '\\b'), `missing rule: ${rule}`)

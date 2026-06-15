@@ -41,11 +41,11 @@ instance and layer further grammar on the shared rules:
 import { Tabnas } from 'tabnas'
 import { json } from '@tabnas/json'
 
-const am = new Tabnas({ plugins: [json] })
-am.parse('{"a":[1,2,3]}')
+const tn = new Tabnas({ plugins: [json] })
+tn.parse('{"a":[1,2,3]}')
 ```
 
-`registerJsonGrammar(am)` installs just the `val` / `map` / `list` /
+`registerJsonGrammar(tn)` installs just the `val` / `map` / `list` /
 `pair` / `elem` rules (jsonic's "Plain JSON" core) without the strict
 options, for plugins that want to build on the JSON rule set.
 
@@ -107,8 +107,8 @@ jsonc.parse('{"a":1} // ok')      // { a: 1 }
 jsonc.parse('{"a":/* ok */1}')    // { a: 1 }
 ```
 
-For deeper changes, call `registerJsonGrammar(am)` to install just the
-rules, then use the engine's rule API (`am.rule(...)`, and the
+For deeper changes, call `registerJsonGrammar(tn)` to install just the
+rules, then use the engine's rule API (`tn.rule(...)`, and the
 `clearOpen` / `clearClose` / `@<rule>-<phase>/replace` hooks) to replace
 or extend the shared `val` / `map` / `list` / `pair` / `elem` rules
 without re-declaring the JSON core.

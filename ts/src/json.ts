@@ -84,8 +84,8 @@ const JSON_OPTIONS = {
 // given engine instance. Exposed separately from the options so other
 // grammar plugins can layer their extensions on top without re-declaring
 // the JSON core. This is jsonic's "Plain JSON" grammar.
-export function registerJsonGrammar(am: Tabnas): void {
-  am.grammar({
+export function registerJsonGrammar(tn: Tabnas): void {
+  tn.grammar({
     ref: {
       // Strict JSON keys are quoted strings (the KEY token set is
       // restricted to #ST), so the key value is the decoded string.
@@ -246,20 +246,20 @@ export function registerJsonGrammar(am: Tabnas): void {
 
 // The standard plugin form: apply the strict JSON options, then register
 // the JSON grammar. `use` this on a bare engine, or pass it to `make`.
-export const json: Plugin = function json(am: Tabnas, _options?: any) {
-  am.options(JSON_OPTIONS)
-  registerJsonGrammar(am)
+export const json: Plugin = function json(tn: Tabnas, _options?: any) {
+  tn.options(JSON_OPTIONS)
+  registerJsonGrammar(tn)
 }
 
 // Create a standard-JSON parser instance: a tabnas engine with the json
 // plugin installed. Extra options (e.g. info.map/list/text) are applied
 // after the grammar exists, mirroring the Go `Make`.
 export function make(opts?: Record<string, any>): Tabnas {
-  const am = new Tabnas({ plugins: [json] })
+  const tn = new Tabnas({ plugins: [json] })
   if (opts) {
-    am.options(opts)
+    tn.options(opts)
   }
-  return am
+  return tn
 }
 
 // A lazily-created default instance reused by `parse`, so repeated calls

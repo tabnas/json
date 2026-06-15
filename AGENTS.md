@@ -74,7 +74,7 @@ sibling and builds it first.
 5. Keep the grammar a reusable foundation. `registerJsonGrammar` (TS) /
    `RegisterJSONGrammar` (Go) install only the JSON core so other plugins
    can layer on it; don't fold options-specific behavior into the rules.
-   Both use the engine's declarative grammar spec — `am.grammar({ ref,
+   Both use the engine's declarative grammar spec — `tn.grammar({ ref,
    rule })` (TS) and `j.Grammar(&GrammarSpec{Ref, Rule})` (Go) — so the
    two grammars read almost line-for-line the same. Keep them aligned.
 

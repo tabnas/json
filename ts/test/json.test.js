@@ -28,26 +28,26 @@ describe('json', () => {
   })
 
   it('make(opts) applies extra options after the grammar', () => {
-    const am = make({ info: { map: true } })
-    const out = am.parse('{"a":1}')
+    const tn = make({ info: { map: true } })
+    const out = tn.parse('{"a":1}')
     const mark = Object.getOwnPropertyDescriptor(out, '__info__')
     assert.strictEqual(mark.value.implicit, false)
   })
 
   it('json is a usable tabnas plugin', () => {
-    const am = new Tabnas({ plugins: [json] })
-    assert.deepStrictEqual(norm(am.parse('{"a":[1,2,3]}')), { a: [1, 2, 3] })
+    const tn = new Tabnas({ plugins: [json] })
+    assert.deepStrictEqual(norm(tn.parse('{"a":[1,2,3]}')), { a: [1, 2, 3] })
   })
 
   it('supports the engine info options (foundation for other parsers)', () => {
     // Enabling info.map/list/text exercises the marker-attaching branches
     // the plain-JSON config leaves off; kept so other plugins can build on
     // this grammar.
-    const am = new Tabnas({
+    const tn = new Tabnas({
       plugins: [json],
       info: { map: true, list: true, text: true },
     })
-    const out = am.parse('{"a":["x",1],"__info__":9}')
+    const out = tn.parse('{"a":["x",1],"__info__":9}')
     // The key matching the marker is dropped to preserve metadata.
     assert.deepStrictEqual(Object.keys(out), ['a'])
     const mapMark = Object.getOwnPropertyDescriptor(out, '__info__')

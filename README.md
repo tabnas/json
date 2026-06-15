@@ -61,8 +61,8 @@ parse('{"a":1,"b":[2,3]}') // { a: 1, b: [2, 3] }
 
 // or install the plugin on your own engine instance:
 import { Tabnas } from 'tabnas'
-const am = new Tabnas({ plugins: [json] })
-am.parse('[1,2,3]')
+const tn = new Tabnas({ plugins: [json] })
+tn.parse('[1,2,3]')
 ```
 
 Go:
