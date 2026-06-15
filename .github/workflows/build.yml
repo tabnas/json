@@ -67,3 +67,48 @@ jobs:
     - name: Test
       run: go test ./...
       working-directory: ./json/go
+
+  # Optional composition check: the JSON plugin layered with the external
+  # @tabnas/debug tool. It is intentionally separate from the core jobs —
+  # neither runtime declares @tabnas/debug as a dependency, so this job
+  # builds it from a sibling checkout. The TS test skips without
+  # TABNAS_DEBUG_PATH; the Go test lives in the isolated go/compose module.
+  compose-debug:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        path: json
+    - uses: actions/checkout@v4
+      with:
+        repository: tabnas/parser
+        path: parser
+    - uses: actions/checkout@v4
+      with:
+        repository: tabnas/debug
+        path: debug
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22.x
+    - uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+    # Build the engine (consumed by both debug and json).
+    - run: npm install && npm run build
+      working-directory: ./parser/ts
+    # Build @tabnas/debug (TS) against the engine for the TS compose test.
+    - name: Build @tabnas/debug (TS)
+      run: |
+        mkdir -p vendor/tabnas-parser
+        cp -r ../parser/ts ../parser/go vendor/tabnas-parser/
+        cd ts && npm install && npm run build
+      working-directory: ./debug
+    # Run the json suite with the compose test active (debug resolvable).
+    - name: TS tests + composition
+      run: TABNAS_DEBUG_PATH="$GITHUB_WORKSPACE/debug/ts/dist/debug.js" npm test
+      working-directory: ./json/ts
+    # Go composition test (isolated module; resolves parser + debug siblings).
+    - name: Go composition test
+      run: go test ./...
+      working-directory: ./json/go/compose
+

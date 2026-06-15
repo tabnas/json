@@ -125,3 +125,21 @@ The grammar action closures (`registerJsonGrammar` /
 inputs the strict lexer cannot produce (empty values, non-string keys)
 were removed, so the rule actions stay reachable and covered. Keep it
 that way — don't reintroduce dead extended-grammar handling.
+
+## Optional composition test (@tabnas/debug)
+
+The repo proves it works as a foundation for other tabnas tooling by
+composing with the external [`@tabnas/debug`](https://github.com/tabnas/debug)
+plugin. `@tabnas/debug` is **not** a declared dependency in either
+runtime, so the core build stays self-contained:
+
+- TS: `ts/test/compose-debug.test.js` resolves the debug plugin
+  dynamically and **skips** unless `TABNAS_DEBUG_PATH` points at a built
+  `@tabnas/debug` (so plain `npm test` just skips it).
+- Go: `go/compose/` is a **separate module** (its own `go.mod` with
+  replaces for the json, parser, and debug siblings), so the main
+  module's `go test ./...` never descends into it.
+
+The `compose-debug` CI job checks out `tabnas/parser` and `tabnas/debug`
+as siblings, builds them, and runs both composition tests. It is
+intentionally separate from the core `build-ts` / `build-go` jobs.
