@@ -35,7 +35,7 @@
     ".": "./dist/json.js"
   },
   "dependencies": {
-    "tabnas": "file:../../parser/ts"
+    "@tabnas/parser": "file:../../parser/ts"
   },
   "devDependencies": {
     "@types/node": "20.x",

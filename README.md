@@ -46,7 +46,7 @@ then layer additional rules on the shared `val` / `map` / `list` /
 | **Go** (`github.com/tabnas/json/go`) | [`go/README.md`](go/README.md) |
 
 Both runtimes are grammar plugins on the `tabnas` engine — the TypeScript
-package on the `tabnas` npm package, the Go module on
+package on the `@tabnas/parser` npm package, the Go module on
 `github.com/tabnas/parser/go`. TypeScript is canonical: both suites run
 the shared conformance fixtures in [`ts/test/spec/`](ts/test/spec/).
 
@@ -60,7 +60,7 @@ import { parse, json } from '@tabnas/json'
 parse('{"a":1,"b":[2,3]}') // { a: 1, b: [2, 3] }
 
 // or install the plugin on your own engine instance:
-import { Tabnas } from 'tabnas'
+import { Tabnas } from '@tabnas/parser'
 const tn = new Tabnas({ plugins: [json] })
 tn.parse('[1,2,3]')
 ```

@@ -11,7 +11,7 @@
 const { describe, it } = require('node:test')
 const assert = require('node:assert')
 
-const { Tabnas } = require('tabnas')
+const { Tabnas } = require('@tabnas/parser')
 const { json } = require('../dist/json.js')
 
 function loadDebug() {

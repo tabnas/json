@@ -25,7 +25,7 @@ import {
   type FuncRef,
   type Plugin,
   type Rule,
-} from 'tabnas'
+} from '@tabnas/parser'
 
 // Current package version.
 export const Version = '1.0.0'

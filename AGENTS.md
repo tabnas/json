@@ -26,7 +26,7 @@ refactored down to standard JSON, dropping jsonic's extended grammar.
 
 | Path | What it is |
 |---|---|
-| [`ts/`](ts/) | **Canonical** TypeScript implementation — the `@tabnas/json` package. Plugin in `src/json.ts`, CLI in `src/json-cli.ts`. Depends on the `tabnas` npm package. |
+| [`ts/`](ts/) | **Canonical** TypeScript implementation — the `@tabnas/json` package. Plugin in `src/json.ts`, CLI in `src/json-cli.ts`. Depends on the `@tabnas/parser` npm package. |
 | [`go/`](go/) | Go port — `github.com/tabnas/json/go`. Plugin in `json.go`. Depends on `github.com/tabnas/parser/go` via a `replace` directive (sibling checkout). |
 | [`ts/test/spec/`](ts/test/spec/) | Shared `.tsv` conformance fixtures (`input → expected`, or `ERROR`). Run by both suites. |
 
@@ -36,7 +36,7 @@ Both runtimes depend on the engine as a **sibling checkout**, the same
 development model jsonic uses, until `tabnas/parser` publishes tagged
 packages:
 
-- TypeScript: `"tabnas": "file:../../parser/ts"` in `ts/package.json`.
+- TypeScript: `"@tabnas/parser": "file:../../parser/ts"` in `ts/package.json`.
 - Go: `replace github.com/tabnas/parser/go => ../../parser/go` in
   `go/go.mod`.
 

@@ -38,7 +38,7 @@ The package is a `tabnas` grammar plugin. Install it on your own engine
 instance and layer further grammar on the shared rules:
 
 ```ts
-import { Tabnas } from 'tabnas'
+import { Tabnas } from '@tabnas/parser'
 import { json } from '@tabnas/json'
 
 const tn = new Tabnas({ plugins: [json] })
@@ -98,7 +98,7 @@ the `json` plugin. For example, a JSON-with-comments (JSONC) parser is
 just the JSON grammar with comment lexing re-enabled:
 
 ```ts
-import { Tabnas } from 'tabnas'
+import { Tabnas } from '@tabnas/parser'
 import { json } from '@tabnas/json'
 
 const jsonc = new Tabnas({ plugins: [json] })
@@ -147,7 +147,7 @@ This package depends on the engine as a sibling checkout:
 ```bash
 git clone https://github.com/tabnas/parser   # sibling of this repo
 ( cd parser/ts && npm install && npm run build )
-npm install      # resolves "tabnas": "file:../../parser/ts"
+npm install      # resolves "@tabnas/parser": "file:../../parser/ts"
 npm test         # tsc build + node --test
 ```
 
