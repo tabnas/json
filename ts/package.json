@@ -39,6 +39,7 @@
   },
   "devDependencies": {
     "@types/node": "20.x",
+    "@tabnas/debug": "file:../../debug/ts",
     "typescript": "5.x"
   }
 }
