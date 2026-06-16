@@ -14,7 +14,7 @@
   "author": "tabnas",
   "license": "MIT",
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "scripts": {
     "build": "tsc --build src",
@@ -34,12 +34,14 @@
   "exports": {
     ".": "./dist/json.js"
   },
-  "dependencies": {
-    "@tabnas/parser": "file:../../parser/ts"
-  },
   "devDependencies": {
-    "@types/node": "20.x",
     "@tabnas/debug": "file:../../debug/ts",
+    "@tabnas/parser": "file:../../parser/ts",
+    "@tabnas/railroad": "file:../../railroad/ts",
+    "@types/node": "20.x",
     "typescript": "5.x"
+  },
+  "peerDependencies": {
+    "@tabnas/parser": ">=2"
   }
 }
