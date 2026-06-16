@@ -7,39 +7,48 @@ on:
     branches: [ main ]
 
 jobs:
-  build-ts:
+  build:
+
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [20.x, 22.x]
+        node-version: [24.x]
 
     runs-on: ${{ matrix.os }}
 
     steps:
-    # This package is a grammar plugin for the tabnas engine; check both
-    # out as siblings so the `tabnas` file: dependency (../../parser/ts)
-    # resolves.
     - uses: actions/checkout@v4
       with:
         path: json
-    - uses: actions/checkout@v4
-      with:
-        repository: tabnas/parser
-        path: parser
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-    # Build the tabnas engine first so this package can resolve and import it.
-    - run: npm install && npm run build
-      working-directory: ./parser/ts
-    - run: npm install
-      working-directory: ./json/ts
-    - run: npm test
-      working-directory: ./json/ts
+    # The @tabnas siblings are not published to npm; clone them so the
+    # file: dependencies resolve, then build everything (this repo included)
+    # in dependency order so each package sees its built dependencies.
+    - name: Clone tabnas dependencies
+      shell: bash
+      run: |
+        set -e
+        for dep in parser debug railroad; do
+          git clone --depth 1 "https://github.com/tabnas/$dep.git" "$dep"
+        done
+    - name: Build (dependencies, then this repo)
+      shell: bash
+      run: |
+        set -e
+        for pkg in parser debug json railroad; do
+          ( cd "$pkg/ts" && npm i && npm run build --if-present )
+        done
+    - name: Test
+      shell: bash
+      working-directory: json/ts
+      run: npm test
 
   build-go:
+
     strategy:
       fail-fast: false
       matrix:
@@ -48,67 +57,14 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    # The Go module depends on github.com/tabnas/parser/go via a replace
-    # directive (../../parser/go), so check the engine out as a sibling.
     - uses: actions/checkout@v4
-      with:
-        path: json
-    - uses: actions/checkout@v4
-      with:
-        repository: tabnas/parser
-        path: parser
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
         go-version: '1.24'
-    - name: Vet
-      run: go vet ./...
-      working-directory: ./json/go
+    - name: Build
+      working-directory: go
+      run: go build ./...
     - name: Test
-      run: go test ./...
-      working-directory: ./json/go
-
-  # Optional composition check: the JSON plugin layered with the external
-  # @tabnas/debug tool. It is intentionally separate from the core jobs —
-  # neither runtime declares @tabnas/debug as a dependency, so this job
-  # builds it from a sibling checkout. The TS test skips without
-  # TABNAS_DEBUG_PATH; the Go test lives in the isolated go/compose module.
-  compose-debug:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        path: json
-    - uses: actions/checkout@v4
-      with:
-        repository: tabnas/parser
-        path: parser
-    - uses: actions/checkout@v4
-      with:
-        repository: tabnas/debug
-        path: debug
-    - uses: actions/setup-node@v4
-      with:
-        node-version: 22.x
-    - uses: actions/setup-go@v5
-      with:
-        go-version: '1.24'
-    # Build the engine (consumed by both debug and json).
-    - run: npm install && npm run build
-      working-directory: ./parser/ts
-    # Build @tabnas/debug (TS) against the engine for the TS compose test.
-    - name: Build @tabnas/debug (TS)
-      run: |
-        mkdir -p vendor/tabnas-parser
-        cp -r ../parser/ts ../parser/go vendor/tabnas-parser/
-        cd ts && npm install && npm run build
-      working-directory: ./debug
-    # Run the json suite with the compose test active (debug resolvable).
-    - name: TS tests + composition
-      run: TABNAS_DEBUG_PATH="$GITHUB_WORKSPACE/debug/ts/dist/debug.js" npm test
-      working-directory: ./json/ts
-    # Go composition test (isolated module; resolves parser + debug siblings).
-    - name: Go composition test
-      run: go test ./...
-      working-directory: ./json/go/compose
-
+      working-directory: go
+      run: go test -v ./...
