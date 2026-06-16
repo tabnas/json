@@ -153,6 +153,16 @@ npm test         # tsc build + node --test
 
 See [`AGENTS.md`](AGENTS.md) for layout and conventions.
 
+
+## Grammar diagram
+
+The installed grammar as a railroad/syntax diagram, generated from the live
+grammar with [`@tabnas/railroad`](https://github.com/tabnas/railroad):
+
+![json grammar railroad diagram](doc/grammar.svg)
+
+A vertical ASCII version is in [`doc/grammar.txt`](doc/grammar.txt).
+
 ## License
 
 MIT.
