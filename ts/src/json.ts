@@ -80,6 +80,21 @@ export function registerJsonGrammar(tn: Tabnas): void {
     // hand-write that as @jsonMapMark/@jsonListMark/@jsonText/@jsonSetval).
     // Strict JSON containers are always explicit, so @object$/@array$ take
     // the default implicit:false (no `k` config needed).
+    //
+    // The builtin actions used below, one line each:
+    //   @reset$  — clear the parent-seeded node (so a value doesn't inherit
+    //              the parent container).
+    //   @object$ — allocate an empty object into the node (a MapRef under
+    //              info.map).
+    //   @array$  — allocate an empty array into the node (a ListRef under
+    //              info.list).
+    //   @key$    — capture the matched key token into a scratch slot for the
+    //              pending @setval$.
+    //   @setval$ — assign the just-built child value into the object under
+    //              the captured key.
+    //   @push$   — append the just-built child value to the array.
+    //   @value$  — resolve the rule's value: a built child wins, else the
+    //              scalar token (boxed with quote info under info.text).
     rule: {
       val: {
         // Opening token alternates. @reset$ clears the parent-seeded node
