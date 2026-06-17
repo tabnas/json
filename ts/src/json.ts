@@ -18,28 +18,10 @@
  *  shared val / map / list / pair / elem rules.
  */
 
-import {
-  Tabnas,
-  TabnasError,
-  type Context,
-  type FuncRef,
-  type Plugin,
-  type Rule,
-} from '@tabnas/parser'
+import { Tabnas, TabnasError, type Plugin } from '@tabnas/parser'
 
 // Current package version.
 export const Version = '1.0.0'
-
-const defprop = Object.defineProperty
-
-// Attach a hidden marker property to a node — used when info.map /
-// info.list mode is on so callers can introspect container origins.
-// Standard JSON parsing ignores marker properties.
-function mark(node: any, marker: string, data: any): void {
-  if (node != null && typeof node === 'object') {
-    defprop(node, marker, { value: data, writable: true })
-  }
-}
 
 // JSON-only lexer/parser options. Restrictive enough to mirror
 // JSON.parse: double-quoted strings only, plain decimal numbers, quoted
@@ -86,61 +68,22 @@ const JSON_OPTIONS = {
 // the JSON core. This is jsonic's "Plain JSON" grammar.
 export function registerJsonGrammar(tn: Tabnas): void {
   tn.grammar({
-    // The structure-building is the engine's native-value `$`-builtins
-    // (@object$/@array$/@reset$/@key$/@push$/@value$ — referenced by name
-    // on the alts below; the engine merges them in at load). Only the
-    // json-SPECIFIC behaviour stays here as thin closures composed via
-    // array-`a`: the `info` introspection markers and the pair assign's
-    // marker-key-drop + prev-value (these are not generic JSON building).
-    ref: {
-      // After @object$ allocates the object, mark it when info.map is on.
-      '@jsonMapMark': (r: Rule, ctx: Context) => {
-        if (ctx.cfg.info.map) {
-          mark(r.node, ctx.cfg.info.marker, { implicit: false, meta: {} })
-        }
-      },
+    // The schema version of the native-value builtins this grammar binds
+    // to (object/array/reset/key/setval/push/value).
+    v: 2,
 
-      // After @array$ allocates the array, mark it when info.list is on.
-      '@jsonListMark': (r: Rule, ctx: Context) => {
-        if (ctx.cfg.info.list) {
-          mark(r.node, ctx.cfg.info.marker, { implicit: false, meta: {} })
-        }
-      },
-
-      // After @value$ resolves a scalar, wrap a string value with quote
-      // info when info.text is on. (No-op for container values, which
-      // aren't strings, and when info.text is off.)
-      '@jsonText': (r: Rule, ctx: Context) => {
-        if (
-          ctx.cfg.info.text &&
-          typeof r.node === 'string' &&
-          (r.o0.tin === ctx.cfg.t.ST || r.o0.tin === ctx.cfg.t.TX)
-        ) {
-          const quote =
-            r.o0.tin === ctx.cfg.t.ST && r.o0.src.length > 0 ? r.o0.src[0] : ''
-          const sv = new String(r.node)
-          mark(sv, ctx.cfg.info.marker, { quote })
-          r.node = sv as any
-        }
-      },
-
-      // The pair assign: drop a key that matches the info marker (to
-      // preserve metadata), record the previous value (for extensions),
-      // then assign. The generic assign is @setval$; this wrapper adds
-      // the json-specific marker-drop + prev.
-      '@jsonSetval': (r: Rule, ctx: Context) => {
-        if (ctx.cfg.info.map && r.u.key === ctx.cfg.info.marker) {
-          return
-        }
-        r.u.prev = r.node[r.u.key]
-        r.node[r.u.key] = r.child.node
-      },
-    } as Record<FuncRef, Function>,
-
+    // The value tree is built ENTIRELY by the engine's native-value
+    // `$`-builtins — referenced by name on the alts below; the engine
+    // merges them in at load. There are NO grammar-local closures: the
+    // builders are info-aware, so when info.map/list/text is enabled they
+    // attach the introspection marker themselves (the json plugin used to
+    // hand-write that as @jsonMapMark/@jsonListMark/@jsonText/@jsonSetval).
+    // Strict JSON containers are always explicit, so @object$/@array$ take
+    // the default implicit:false (no `k` config needed).
     rule: {
       val: {
         // Opening token alternates. @reset$ clears the parent-seeded node
-        // (was @val-bo) so a scalar doesn't inherit the parent container.
+        // so a scalar doesn't inherit the parent container.
         open: [
           // A map: `{ ...`
           { s: '#OB', p: 'map', b: 1, a: '@reset$', g: 'map,json' },
@@ -152,25 +95,25 @@ export function registerJsonGrammar(tn: Tabnas): void {
           { s: '#VAL', a: '@reset$', g: 'val,json' },
         ],
 
-        // Closing alternates. @value$ coalesces (child wins, else scalar);
-        // @jsonText adds the info.text quote-wrap (was @val-bc).
+        // Closing alternates. @value$ coalesces (child wins, else the
+        // scalar token) and, under info.text, boxes a string with its quote.
         close: [
           // End of input.
-          { s: '#ZZ', a: ['@value$', '@jsonText'], g: 'end,json' },
+          { s: '#ZZ', a: '@value$', g: 'end,json' },
 
           // There's more JSON.
-          { b: 1, a: ['@value$', '@jsonText'], g: 'more,json' },
+          { b: 1, a: '@value$', g: 'more,json' },
         ],
       },
 
       map: {
         open: [
           // An empty map: {}.
-          { s: '#OB #CB', b: 1, n: { pk: 0 }, a: ['@object$', '@jsonMapMark'], g: 'map,json' },
+          { s: '#OB #CB', b: 1, n: { pk: 0 }, a: '@object$', g: 'map,json' },
 
           // Start matching map key-value pairs.
           // Reset counter n.pk as new map (for extensions).
-          { s: '#OB', p: 'pair', n: { pk: 0 }, a: ['@object$', '@jsonMapMark'], g: 'map,json,pair' },
+          { s: '#OB', p: 'pair', n: { pk: 0 }, a: '@object$', g: 'map,json,pair' },
         ],
         close: [
           // End of map.
@@ -181,10 +124,10 @@ export function registerJsonGrammar(tn: Tabnas): void {
       list: {
         open: [
           // An empty list: [].
-          { s: '#OS #CS', b: 1, a: ['@array$', '@jsonListMark'], g: 'list,json' },
+          { s: '#OS #CS', b: 1, a: '@array$', g: 'list,json' },
 
           // Start matching list elements.
-          { s: '#OS', p: 'elem', a: ['@array$', '@jsonListMark'], g: 'list,elem,json' },
+          { s: '#OS', p: 'elem', a: '@array$', g: 'list,elem,json' },
         ],
         close: [
           // End of list.
@@ -195,8 +138,7 @@ export function registerJsonGrammar(tn: Tabnas): void {
       // sets key:val on node
       pair: {
         open: [
-          // Match key-colon start of pair. @key$ captures the key (was
-          // @pairkey).
+          // Match key-colon start of pair. @key$ captures the key.
           {
             s: '#KEY #CL',
             p: 'val',
@@ -206,12 +148,12 @@ export function registerJsonGrammar(tn: Tabnas): void {
           },
         ],
         close: [
-          // Comma means a new pair at same pair-key level. @jsonSetval
-          // assigns the pair (was @pair-bc); on every close alt (fan-out).
-          { s: '#CA', r: 'pair', a: '@jsonSetval', g: 'map,pair,json' },
+          // Comma means a new pair at same pair-key level. @setval$
+          // assigns the pair; on every close alt (fan-out).
+          { s: '#CA', r: 'pair', a: '@setval$', g: 'map,pair,json' },
 
           // End of map.
-          { s: '#CB', b: 1, a: '@jsonSetval', g: 'map,pair,json' },
+          { s: '#CB', b: 1, a: '@setval$', g: 'map,pair,json' },
         ],
       },
 
@@ -222,7 +164,7 @@ export function registerJsonGrammar(tn: Tabnas): void {
           { p: 'val', g: 'list,elem,val,json' },
         ],
         close: [
-          // Next element. @push$ appends the element (was @elem-bc).
+          // Next element. @push$ appends the element.
           { s: '#CA', r: 'elem', a: '@push$', g: 'list,elem,json' },
 
           // End of list.
