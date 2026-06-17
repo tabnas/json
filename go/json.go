@@ -89,6 +89,16 @@ func jsonOptions() tabnas.Options {
 // hand-write that as @map-bc / @list-bc / @val-bc state hooks. Strict
 // JSON containers are always explicit, so @object$/@array$ take the
 // default implicit:false (no `K` config needed).
+//
+// The builtin actions used below, one line each:
+//
+//	@reset$  — clear the parent-seeded node (so a value doesn't inherit the parent container).
+//	@object$ — allocate an empty object into the node (a MapRef under info.Map).
+//	@array$  — allocate an empty array into the node (a ListRef under info.List).
+//	@key$    — capture the matched key token into a scratch slot for the pending @setval$.
+//	@setval$ — assign the just-built child value into the object under the captured key.
+//	@push$   — append the just-built child value to the array.
+//	@value$  — resolve the rule's value: a built child wins, else the scalar token (a Text under info.Text).
 func RegisterJSONGrammar(j *tabnas.Tabnas) error {
 	rules := map[string]*tabnas.GrammarRuleSpec{
 		// val: a value is a map, a list, or a plain scalar token. @reset$
