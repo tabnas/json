@@ -1,9 +1,9 @@
-// Isolated module for the optional json + @tabnas/debug composition test.
+// Isolated module for the json + @tabnas/debug integration test.
 // It is a SEPARATE module (its own go.mod), so the main module's
 // `go test ./...` does not descend into it and stays self-contained —
-// it has no dependency on the external debug tool. The compose-debug CI
+// it has no dependency on the external debug tool. The debug CI
 // job runs `go test` here with the parser and debug siblings checked out.
-module github.com/tabnas/json/go/compose
+module github.com/tabnas/json/go/debugtest
 
 go 1.24.7
 

@@ -1,10 +1,10 @@
 // Copyright (c) 2026 tabnas, MIT License
 
-// Package compose holds the optional composition test that layers the
-// official @tabnas/debug plugin on the standard JSON grammar. It lives in
-// its own module so the main package never depends on the external debug
-// tool; see go.mod.
-package compose
+// Package debugtest is the debug-integration test module: it holds the
+// optional test that layers the official @tabnas/debug plugin on the
+// standard JSON grammar. It lives in its own module so the main package
+// never depends on the external debug tool; see go.mod.
+package debugtest
 
 import (
 	"reflect"
@@ -15,7 +15,7 @@ import (
 	tjson "github.com/tabnas/json/go"
 )
 
-func TestComposeJSONDebug(t *testing.T) {
+func TestJSONComposesWithDebug(t *testing.T) {
 	j := tjson.Make()
 	if err := j.Use(debug.Debug); err != nil {
 		t.Fatalf("Use(debug.Debug): %v", err)
