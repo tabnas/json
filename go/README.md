@@ -41,6 +41,18 @@ func main() {
 `Parse` returns values using the same Go types as `encoding/json`:
 `nil`, `bool`, `float64`, `string`, `[]any`, and `map[string]any`.
 
+## Documentation
+
+Full [Diátaxis](https://diataxis.fr) docs:
+
+- [`doc/tutorial.md`](doc/tutorial.md) — learn it step by step.
+- [`doc/guide.md`](doc/guide.md) — task-focused recipes.
+- [`doc/reference.md`](doc/reference.md) — the exact API and CLI surface.
+- [`doc/concepts.md`](doc/concepts.md) — how it works, including the
+  differences from the TypeScript version.
+
+TypeScript is canonical; its docs are in [`../ts/doc/`](../ts/doc/).
+
 ## Use it as a plugin
 
 The package is a `tabnas` grammar plugin. Install it on your own engine
@@ -128,6 +140,14 @@ go test ./...   # replace directive resolves ../../parser/go;
 ```
 
 See [`AGENTS.md`](AGENTS.md) for layout and conventions.
+
+## Grammar diagram
+
+The grammar is identical across runtimes. Its railroad/syntax diagram
+(generated from the live TS grammar with
+[`@tabnas/railroad`](https://github.com/tabnas/railroad)) lives in the TS
+docs: [`../ts/doc/grammar.svg`](../ts/doc/grammar.svg), with an ASCII
+version in [`../ts/doc/grammar.txt`](../ts/doc/grammar.txt).
 
 ## License
 
