@@ -27,7 +27,7 @@ import (
 )
 
 // Version is the current version of the module.
-const Version = "1.0.0"
+const Version = "0.2.0"
 
 // strictNumber matches exactly a standard JSON number. Anything the
 // engine's (lenient) number matcher accepts that does not match this —
