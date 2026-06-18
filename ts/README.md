@@ -32,6 +32,17 @@ parse('"hello"') // => "hello"
 
 `parse` is also the default export.
 
+## Documentation
+
+Full [Diátaxis](https://diataxis.fr) docs:
+
+- [`doc/tutorial.md`](doc/tutorial.md) — learn it step by step.
+- [`doc/guide.md`](doc/guide.md) — task-focused recipes.
+- [`doc/reference.md`](doc/reference.md) — the exact API and CLI surface.
+- [`doc/concepts.md`](doc/concepts.md) — how it works and why.
+
+The Go port has the [equivalent docs](../go/doc/).
+
 ## Use it as a plugin
 
 The package is a `tabnas` grammar plugin. Install it on your own engine

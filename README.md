@@ -50,6 +50,18 @@ package on the `@tabnas/parser` npm package, the Go module on
 `github.com/tabnas/parser/go`. TypeScript is canonical: both suites run
 the shared conformance fixtures in [`ts/test/spec/`](ts/test/spec/).
 
+## Documentation
+
+Full [Diátaxis](https://diataxis.fr) documentation, four quadrants per
+runtime:
+
+| | TypeScript / JavaScript | Go |
+|---|---|---|
+| **Tutorial** (learn) | [`ts/doc/tutorial.md`](ts/doc/tutorial.md) | [`go/doc/tutorial.md`](go/doc/tutorial.md) |
+| **How-to** (recipes) | [`ts/doc/guide.md`](ts/doc/guide.md) | [`go/doc/guide.md`](go/doc/guide.md) |
+| **Reference** (API/CLI) | [`ts/doc/reference.md`](ts/doc/reference.md) | [`go/doc/reference.md`](go/doc/reference.md) |
+| **Concepts** (why) | [`ts/doc/concepts.md`](ts/doc/concepts.md) | [`go/doc/concepts.md`](go/doc/concepts.md) |
+
 ## Quick example
 
 TypeScript / JavaScript:
