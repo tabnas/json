@@ -16,7 +16,7 @@
 // This plugin is intended to be the foundation other tabnas grammar
 // plugins build on: Use it first, then layer rules on the shared val /
 // map / list / pair / elem rules.
-package json
+package tabnasjson
 
 import (
 	"math"

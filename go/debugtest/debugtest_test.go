@@ -4,7 +4,7 @@
 // optional test that layers the official @tabnas/debug plugin on the
 // standard JSON grammar. It lives in its own module so the main package
 // never depends on the external debug tool; see go.mod.
-package debugtest
+package tabnasdebugtest
 
 import (
 	"reflect"

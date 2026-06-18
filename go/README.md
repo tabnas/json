@@ -26,11 +26,11 @@ package main
 import (
 	"fmt"
 
-	json "github.com/tabnas/json/go"
+	tabnasjson "github.com/tabnas/json/go"
 )
 
 func main() {
-	v, err := json.Parse(`{"a":1,"b":[2,3]}`)
+	v, err := tabnasjson.Parse(`{"a":1,"b":[2,3]}`)
 	if err != nil {
 		panic(err)
 	}
@@ -48,12 +48,12 @@ instance and layer further grammar on the shared rules:
 
 ```go
 import (
-	json "github.com/tabnas/json/go"
+	tabnasjson "github.com/tabnas/json/go"
 	tabnas "github.com/tabnas/parser/go"
 )
 
 j := tabnas.Make()
-j.Use(json.Json)
+j.Use(tabnasjson.Json)
 v, err := j.Parse(`{"a":[1,2,3]}`)
 ```
 
@@ -69,7 +69,7 @@ on every call. To customize, build your own instance with `Make(extra ...Options
 
 ```go
 tr := true
-p := json.Make(tabnas.Options{Info: &tabnas.InfoOptions{Map: &tr, List: &tr}})
+p := tabnasjson.Make(tabnas.Options{Info: &tabnas.InfoOptions{Map: &tr, List: &tr}})
 p.Parse(`{"a":[1,2]}`)
 ```
 
@@ -92,7 +92,7 @@ the JSON grammar with comment lexing re-enabled:
 
 ```go
 tr := true
-jsonc := json.Make(tabnas.Options{Comment: &tabnas.CommentOptions{Lex: &tr}})
+jsonc := tabnasjson.Make(tabnas.Options{Comment: &tabnas.CommentOptions{Lex: &tr}})
 jsonc.Parse(`{"a":1} // ok`)    // map[string]any{"a": 1}
 jsonc.Parse(`{"a":/* ok */1}`)  // map[string]any{"a": 1}
 ```
@@ -108,7 +108,7 @@ the JSON core.
 On invalid input `Parse` returns a `*tabnas.TabnasError`:
 
 ```go
-v, err := json.Parse("{a:1}")
+v, err := tabnasjson.Parse("{a:1}")
 if err != nil {
 	var je *tabnas.TabnasError
 	if errors.As(err, &je) {
