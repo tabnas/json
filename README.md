@@ -69,15 +69,15 @@ Go:
 
 ```go
 import (
-	json "github.com/tabnas/json/go"
+	tabnasjson "github.com/tabnas/json/go"
 	tabnas "github.com/tabnas/parser/go"
 )
 
-v, err := json.Parse(`{"a":1,"b":[2,3]}`)
+v, err := tabnasjson.Parse(`{"a":1,"b":[2,3]}`)
 
 // or install the plugin on your own engine instance:
 j := tabnas.Make()
-j.Use(json.Json)
+j.Use(tabnasjson.Json)
 v, err = j.Parse(`[1,2,3]`)
 ```
 

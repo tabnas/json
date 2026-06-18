@@ -1,6 +1,6 @@
 // Copyright (c) 2026 tabnas, MIT License
 
-package json
+package tabnasjson
 
 import (
 	stdjson "encoding/json"
