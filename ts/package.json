@@ -42,6 +42,6 @@
     "typescript": "5.x"
   },
   "peerDependencies": {
-    "@tabnas/parser": "^0.2.0"
+    "@tabnas/parser": ">=0"
   }
 }
