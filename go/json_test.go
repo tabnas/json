@@ -4,6 +4,7 @@ package tabnasjson
 
 import (
 	stdjson "encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -138,6 +139,47 @@ func TestPluginIsUsable(t *testing.T) {
 	}
 	if canon(t, got) != `{"a":[1,2,3]}` {
 		t.Fatalf("got %s", canon(t, got))
+	}
+}
+
+// Mirrors the TS JSON_OPTIONS `rule: { finish: false, include: 'json' }`:
+// the Go options carry both Finish=false and Include="json".
+func TestOptionsRuleInclude(t *testing.T) {
+	j := Make()
+	opts := j.Options()
+	if opts.Rule == nil {
+		t.Fatal("Options().Rule is nil")
+	}
+	if opts.Rule.Include != "json" {
+		t.Fatalf("Options().Rule.Include = %q, want %q", opts.Rule.Include, "json")
+	}
+	if opts.Rule.Finish == nil || *opts.Rule.Finish {
+		t.Fatal("Options().Rule.Finish should be false")
+	}
+	// The JSON grammar tags every alternate "json", so the include filter
+	// keeps the full grammar working.
+	got, err := j.Parse(`{"a":[1,2,3]}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if canon(t, got) != `{"a":[1,2,3]}` {
+		t.Fatalf("got %s", canon(t, got))
+	}
+}
+
+// Mirrors the TS re-export `export { TabnasError as JsonError }`: a
+// failed parse yields an error reachable as *JsonError.
+func TestJsonErrorAlias(t *testing.T) {
+	_, err := Parse("{")
+	if err == nil {
+		t.Fatal(`Parse("{") expected error, got nil`)
+	}
+	var je *JsonError
+	if !errors.As(err, &je) {
+		t.Fatalf(`Parse("{") error %T is not a *JsonError`, err)
+	}
+	if je.Code == "" {
+		t.Fatal("JsonError.Code is empty")
 	}
 }
 

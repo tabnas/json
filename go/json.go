@@ -29,6 +29,13 @@ import (
 // Version is the current version of the module.
 const Version = "0.2.0"
 
+// JsonError is the error type returned by a failed parse — an alias of
+// the engine's *tabnas.TabnasError (with Code / Row / Col / Hint fields
+// and a formatted Error() report). Mirrors the TS re-export
+// `export { TabnasError as JsonError }`; reach it with
+// `errors.As(err, &je)` where `je` is a *tabnasjson.JsonError.
+type JsonError = tabnas.TabnasError
+
 // strictNumber matches exactly a standard JSON number. Anything the
 // engine's (lenient) number matcher accepts that does not match this —
 // leading `+`, a bare leading `.` (".5"), a trailing `.` ("1."), leading
@@ -63,7 +70,12 @@ func jsonOptions() tabnas.Options {
 		Comment: &tabnas.CommentOptions{Lex: &f},
 		Map:     &tabnas.MapOptions{Extend: &f},
 		Lex:     &tabnas.LexOptions{Empty: &f},
-		Rule:    &tabnas.RuleOptions{Finish: &f},
+		// Restrict the rule set to the `json`-tagged alternates (TS:
+		// rule.include). The JSON grammar below tags every alt "json", so
+		// on a bare engine this is inert; it matters when the options are
+		// applied over an already-extended grammar, keeping only its
+		// strict-JSON alternates.
+		Rule: &tabnas.RuleOptions{Finish: &f, Include: "json"},
 		// Treat a "no value" / NaN result as a parse failure, mirroring the
 		// TS result.fail. Undefined is the engine's "no value" sentinel
 		// (not nil — JSON null parses to nil and must stay valid); NaN
