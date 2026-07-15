@@ -1,5 +1,12 @@
 # json
 
+<!-- tabnas-badges -->
+[![npm](https://tabnas.github.io/status/badges/json-npm.svg)](https://www.npmjs.com/package/@tabnas/json)
+[![CI](https://github.com/tabnas/json/actions/workflows/ci.yml/badge.svg)](https://github.com/tabnas/json/actions/workflows/ci.yml)
+[![go](https://tabnas.github.io/status/badges/json-go.svg)](https://pkg.go.dev/github.com/tabnas/json/go)
+[![tabnas standard](https://tabnas.github.io/status/badges/json-standard.svg)](https://tabnas.github.io/status/)
+<!-- /tabnas-badges -->
+
 A standard JSON parser for TypeScript/JavaScript and Go, built as a
 grammar plugin for the [`tabnas`](https://github.com/tabnas/parser)
 parsing engine.
