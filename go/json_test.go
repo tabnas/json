@@ -50,6 +50,38 @@ func canon(t *testing.T, v any) string {
 	return string(b)
 }
 
+// deorder recursively rewrites parsed objects from the engine's
+// insertion-ordered *tabnas.OrderedMap into a plain map[string]any (and
+// walks slices), so a value produced by Parse can be compared by value with
+// reflect.DeepEqual against encoding/json's plain-map output. Only the
+// object WRAPPER is dropped; scalar values (including negative zero) are
+// carried through unchanged, so the existing -0 == 0 float semantics hold.
+func deorder(v any) any {
+	switch t := v.(type) {
+	case *tabnas.OrderedMap:
+		m := make(map[string]any, len(t.Keys))
+		for _, k := range t.Keys {
+			val, _ := t.Get(k)
+			m[k] = deorder(val)
+		}
+		return m
+	case map[string]any:
+		m := make(map[string]any, len(t))
+		for k, val := range t {
+			m[k] = deorder(val)
+		}
+		return m
+	case []any:
+		out := make([]any, len(t))
+		for i, val := range t {
+			out[i] = deorder(val)
+		}
+		return out
+	default:
+		return v
+	}
+}
+
 func TestSpecValid(t *testing.T) {
 	for _, row := range loadTSV(t, "json-valid") {
 		input := row[0]
@@ -65,10 +97,36 @@ func TestSpecValid(t *testing.T) {
 			if err := stdjson.Unmarshal([]byte(input), &want); err != nil {
 				t.Fatalf("encoding/json rejected valid fixture %q: %v", input, err)
 			}
-			if !reflect.DeepEqual(got, want) {
+			// Parsed objects are now insertion-ordered *tabnas.OrderedMap;
+			// deorder unwraps them to plain maps so the comparison is by value
+			// (encoding/json yields plain maps). Key order — now source order,
+			// not alphabetical — is separately covered by TestSpecValidOrder.
+			if !reflect.DeepEqual(deorder(got), want) {
 				t.Fatalf("Parse(%q) = %s, want %s", input, canon(t, got), canon(t, want))
 			}
 		})
+	}
+}
+
+// TestSpecValidOrder pins the migration's contract: a parsed object is an
+// insertion-ordered *tabnas.OrderedMap that preserves SOURCE key order (not
+// alphabetical), and re-marshals in that same order. The fixture's keys are
+// deliberately out of alphabetical order so the two orders differ.
+func TestSpecValidOrder(t *testing.T) {
+	got, err := Parse(`{"b":1,"a":2,"c":3}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	om, ok := got.(*tabnas.OrderedMap)
+	if !ok {
+		t.Fatalf("parsed object = %T, want *tabnas.OrderedMap", got)
+	}
+	if want := []string{"b", "a", "c"}; !reflect.DeepEqual(om.Keys, want) {
+		t.Fatalf("Keys = %v, want %v (source order)", om.Keys, want)
+	}
+	// MarshalJSON must emit keys in source order, not alphabetical.
+	if s := canon(t, got); s != `{"b":1,"a":2,"c":3}` {
+		t.Fatalf("marshal = %s, want source-order keys", s)
 	}
 }
 
