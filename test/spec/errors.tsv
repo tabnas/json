@@ -1,0 +1,41 @@
+input	expected	opts
+{	ERROR:unexpected
+[	ERROR:unexpected
+{"a":1	ERROR:unexpected
+[1	ERROR:unexpected
+"abc	ERROR:unterminated_string
+{"a"}	ERROR:unexpected
+{"a":1,}	ERROR:unexpected
+{,}	ERROR:unexpected
+{"a":1 "b":2}	ERROR:unexpected
+[1,]	ERROR:unexpected
+[1 2]	ERROR:unexpected
+'single'	ERROR:unexpected
+{a:1}	ERROR:unexpected
+[1,2,]	ERROR:unexpected
+1 // note	ERROR:unexpected
+a:1,b:2	ERROR:unexpected
+x,y,z	ERROR:unexpected
+1,2	ERROR:unexpected
+0x10	ERROR:unexpected
+.5	ERROR:unexpected
++1	ERROR:unexpected
+True	ERROR:unexpected
+tru	ERROR:unexpected
+nul	ERROR:unexpected
+1.	ERROR:unexpected
+1e	ERROR:unexpected
+-	ERROR:unexpected
+"\\q"	ERROR:unexpected
+"a\\zb"	ERROR:unexpected
+"\\v"	ERROR:unexpected
+"\\x41"	ERROR:unexpected
+"\\`"	ERROR:unexpected
+"\\u{41}"	ERROR:invalid_unicode
+"\\uZ"	ERROR:invalid_unicode
+"\\uZZZZ"	ERROR:invalid_unicode
+01	ERROR:unexpected
+00	ERROR:unexpected
+123abc	ERROR:unexpected
+[1,2]x	ERROR:unexpected
+nullnull	ERROR:unexpected

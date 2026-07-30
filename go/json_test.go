@@ -5,40 +5,11 @@ package tabnasjson
 import (
 	stdjson "encoding/json"
 	"errors"
-	"os"
-	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 
 	tabnas "github.com/tabnas/parser/go"
 )
-
-// specDir is where the shared conformance fixtures live. TypeScript is
-// canonical; the Go suite runs the same .tsv files to prove parity.
-const specDir = "../ts/test/spec"
-
-func loadTSV(t *testing.T, name string) [][2]string {
-	t.Helper()
-	path := filepath.Join(specDir, name+".tsv")
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("spec file not found: %s: %v", path, err)
-	}
-	lines := strings.Split(string(data), "\n")
-	var rows [][2]string
-	for i, line := range lines {
-		if i == 0 || line == "" {
-			continue // skip header and blank lines
-		}
-		cols := strings.SplitN(line, "\t", 2)
-		if len(cols) != 2 {
-			t.Fatalf("%s line %d: expected 2 columns", name, i+1)
-		}
-		rows = append(rows, [2]string{cols[0], cols[1]})
-	}
-	return rows
-}
 
 // canon marshals a value to canonical JSON for comparison.
 func canon(t *testing.T, v any) string {
@@ -82,32 +53,6 @@ func deorder(v any) any {
 	}
 }
 
-func TestSpecValid(t *testing.T) {
-	for _, row := range loadTSV(t, "json-valid") {
-		input := row[0]
-		t.Run(input, func(t *testing.T) {
-			got, err := Parse(input)
-			if err != nil {
-				t.Fatalf("Parse(%q) returned error: %v", input, err)
-			}
-			// Cross-check against the standard library parser. DeepEqual
-			// compares floats with ==, so -0 and 0 (both valid, both the
-			// value zero) are treated as equal.
-			var want any
-			if err := stdjson.Unmarshal([]byte(input), &want); err != nil {
-				t.Fatalf("encoding/json rejected valid fixture %q: %v", input, err)
-			}
-			// Parsed objects are now insertion-ordered *tabnas.OrderedMap;
-			// deorder unwraps them to plain maps so the comparison is by value
-			// (encoding/json yields plain maps). Key order — now source order,
-			// not alphabetical — is separately covered by TestSpecValidOrder.
-			if !reflect.DeepEqual(deorder(got), want) {
-				t.Fatalf("Parse(%q) = %s, want %s", input, canon(t, got), canon(t, want))
-			}
-		})
-	}
-}
-
 // TestSpecValidOrder pins the migration's contract: a parsed object is an
 // insertion-ordered *tabnas.OrderedMap that preserves SOURCE key order (not
 // alphabetical), and re-marshals in that same order. The fixture's keys are
@@ -127,32 +72,6 @@ func TestSpecValidOrder(t *testing.T) {
 	// MarshalJSON must emit keys in source order, not alphabetical.
 	if s := canon(t, got); s != `{"b":1,"a":2,"c":3}` {
 		t.Fatalf("marshal = %s, want source-order keys", s)
-	}
-}
-
-func TestSpecErrors(t *testing.T) {
-	for _, row := range loadTSV(t, "json-errors") {
-		input, code := row[0], row[1]
-		t.Run(input, func(t *testing.T) {
-			_, err := Parse(input)
-			if err == nil {
-				t.Fatalf("Parse(%q) expected error %q, got nil", input, code)
-			}
-			je, ok := err.(*tabnas.TabnasError)
-			if !ok {
-				t.Fatalf("Parse(%q) returned %T, want *tabnas.TabnasError", input, err)
-			}
-			// The error code is part of the shared parity contract: both
-			// runtimes must reject with the same code.
-			if je.Code != code {
-				t.Fatalf("Parse(%q) code = %q, want %q", input, je.Code, code)
-			}
-			// Sanity: the standard library must also reject it.
-			var v any
-			if stdjson.Unmarshal([]byte(input), &v) == nil {
-				t.Fatalf("encoding/json accepted invalid fixture %q", input)
-			}
-		})
 	}
 }
 

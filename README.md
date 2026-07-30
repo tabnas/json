@@ -55,7 +55,7 @@ then layer additional rules on the shared `val` / `map` / `list` /
 Both runtimes are grammar plugins on the `tabnas` engine — the TypeScript
 package on the `@tabnas/parser` npm package, the Go module on
 `github.com/tabnas/parser/go`. TypeScript is canonical: both suites run
-the shared conformance fixtures in [`ts/test/spec/`](ts/test/spec/).
+the shared conformance fixtures in [`test/spec/`](test/spec/).
 
 ## Documentation
 

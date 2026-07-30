@@ -1,4 +1,4 @@
-input	expected
+input	expected	opts
 {}	{}
 []	[]
 0	0
@@ -17,11 +17,11 @@ input	expected
 ""	""
 "a"	"a"
 "hello world"	"hello world"
-"a\"b"	"a\"b"
-"a\\b"	"a\\b"
-"a\/b"	"a/b"
-"tab\tend"	"tab\tend"
-"new\nline"	"new\nline"
+"a\\"b"	"a\"b"
+"a\\\\b"	"a\\b"
+"a\\/b"	"a/b"
+"tab\\tend"	"tab\tend"
+"new\\nline"	"new\nline"
 "A"	"A"
 "é"	"é"
 "😀"	"😀"
