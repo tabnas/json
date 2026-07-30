@@ -6,7 +6,7 @@ parsing engine (`github.com/tabnas/parser/go`).
 
 This is the Go port of [`@tabnas/json`](../ts/). TypeScript is canonical;
 both runtimes share the conformance fixtures in
-[`../ts/test/spec/`](../ts/test/spec/) and produce identical results.
+[`../test/spec/`](../test/spec/) and produce identical results.
 
 ## Install
 
@@ -136,7 +136,7 @@ This module depends on the engine as a sibling checkout:
 ```bash
 git clone https://github.com/tabnas/parser   # sibling of this repo
 go test ./...   # replace directive resolves ../../parser/go;
-                # also runs the shared ../ts/test/spec fixtures
+                # also runs the shared ../test/spec fixtures
 ```
 
 See [`AGENTS.md`](AGENTS.md) for layout and conventions.
