@@ -21,7 +21,11 @@
     "watch": "tsc --build src -w",
     "clean": "rm -rf node_modules dist package-lock.json",
     "test": "npm run build && node --enable-source-maps --test test/**/*.test.js",
-    "coverage": "npm run build && node --test --experimental-test-coverage --test-coverage-include=dist/json.js --test-coverage-include=dist/json-cli.js --test-coverage-lines=0.95 test/**/*.test.js"
+    "coverage": "npm run build && node --test --experimental-test-coverage --test-coverage-include=dist/json.js --test-coverage-include=dist/json-cli.js --test-coverage-lines=0.95 test/**/*.test.js",
+    "repo-stage": "npm run clean && npm i && npm run repo-stage-quick",
+    "repo-stage-quick": "npm run build && npm run test && npm stage publish",
+    "repo-stage-list": "npm stage list",
+    "repo-stage-approve": "npm stage approve"
   },
   "files": [
     "dist",
