@@ -51,3 +51,39 @@ both runtimes without touching either runner.
   case fix TS first and pin the corrected behaviour here.
 - A new fixture must pass in BOTH runtimes: run `go test ./...` (from `go/`)
   and `npm test` (from `ts/`) before considering it done.
+
+## The one exception: `rfc8259-gaps.tsv`
+
+`spec/rfc8259-gaps.tsv` is **deliberately red** and is the single fixture
+file exempt from the "must pass in BOTH runtimes" rule above. Every row is
+input RFC 8259 requires a parser to reject, that `JSON.parse` and
+`encoding/json` both reject, and that one of the two runtimes currently
+accepts. It pins the CORRECT behaviour so the gap cannot be forgotten:
+
+- 11 rows fail in **TypeScript** — trailing content after a complete
+  top-level value is silently discarded (`"a" "b"` parses as `"a"`).
+- 4 rows fail in **Go** — non-string object keys are accepted and coerced
+  to the empty string (`{1:1}` parses as `{"":1}`).
+
+Do not delete rows, relax the expected codes, rename the file out of the
+auto-discovery glob, or move the cases somewhere that does not run, in
+order to get green. The fix belongs in the parsers. When both runtimes
+reject all of these, the file goes green on its own and the exception
+disappears with it.
+
+## The third-party corpus
+
+`spec/*.tsv` is the *parity* contract between the two runtimes. It is not,
+by itself, evidence of RFC conformance — a hand-written fixture set only
+tests what its author thought to write down. The external check is
+[nst/JSONTestSuite](https://github.com/nst/JSONTestSuite) (318 cases: 95
+`y_` must-accept, 188 `n_` must-reject, 35 `i_` implementation-defined),
+run by `ts/test/jsontestsuite.test.js` and `go/jsontestsuite_test.go`.
+
+The corpus is **third-party and is never committed**. It is fetched at a
+pinned commit into the gitignored `test/jsontestsuite/` by
+`scripts/fetch-jsontestsuite.sh` — run automatically by the `pretest` npm
+script (TS) and by `TestMain` (Go). Both runners assert the corpus is
+intact (318 files, 95/188/35) before grading, so narrowing it goes red,
+and both **fail loudly rather than skip** when it is absent: a conformance
+test that quietly does not run reports a green tick that is a lie.

@@ -5,13 +5,19 @@
 # repo-set go.work + node_modules symlinks (admin/scripts/link.sh).
 
 .PHONY: all build test clean build-ts build-go test-ts test-go \
-        clean-ts clean-go publish-ts publish-go tags-go reset
+        clean-ts clean-go publish-ts publish-go tags-go reset fetch-suite
 
 all: build test
 
 build: build-ts build-go
 
-test: test-ts test-go
+test: fetch-suite test-ts test-go
+
+# Fetch the third-party RFC 8259 conformance corpus (nst/JSONTestSuite) at
+# its pinned commit into the gitignored test/jsontestsuite/. Idempotent, and
+# never committed -- see scripts/fetch-jsontestsuite.sh.
+fetch-suite:
+	./scripts/fetch-jsontestsuite.sh
 
 clean: clean-ts clean-go
 
