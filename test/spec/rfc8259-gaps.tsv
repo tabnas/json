@@ -1,0 +1,48 @@
+input	expected	opts
+# DELIBERATELY RED. See ../AGENTS.md, "The one exception".
+#
+# Every row here is input that RFC 8259 requires a parser to REJECT, that
+# BOTH platform parsers (JSON.parse and encoding/json) reject, and that one
+# of the two runtimes currently ACCEPTS. The rows pin the CORRECT behaviour
+# so the gap cannot be quietly forgotten; they are expected to fail until
+# the parsers are fixed (a later phase -- phase 1 only measures).
+#
+# Do not delete rows, relax the codes, or move the file out of the
+# auto-discovery glob to get green. A red test is an honest test.
+#
+# Provenance: found by grading against nst/JSONTestSuite @
+# 1ef36fa01286573e846ac449e8683f8833c5b26a (see scripts/fetch-jsontestsuite.sh).
+# The corpus itself is not committed; these rows are the distilled defects.
+#
+# --- Group A: FAILS IN TYPESCRIPT (Go already rejects all of these) ---
+# Trailing content after a complete top-level value is silently DISCARDED.
+# This is data loss, not mere laxness: `"a" "b"` parses as "a".
+# Corpus: n_structure_array_with_extra_array_close
+[1]]	ERROR:unexpected
+# Corpus: n_structure_object_followed_by_closing_object
+{}}	ERROR:unexpected
+# Corpus: n_array_extra_close
+["x"]]	ERROR:unexpected
+# Corpus: n_array_comma_after_close
+[""],	ERROR:unexpected
+# Corpus: n_structure_close_unopened_array
+1]	ERROR:unexpected
+# Corpus: n_structure_object_with_trailing_garbage
+{"a": true} "x"	ERROR:unexpected
+# Not in the corpus; the same defect, reduced.
+[]]	ERROR:unexpected
+1,	ERROR:unexpected
+"a" "b"	ERROR:unexpected
+null null	ERROR:unexpected
+[1] 2	ERROR:unexpected
+#
+# --- Group B: FAILS IN GO (TypeScript already rejects both of these) ---
+# A non-string object key is accepted and coerced to the empty string:
+# {1:1} parses as {"":1}, so the key is silently destroyed.
+# Corpus: n_object_non_string_key
+{1:1}	ERROR:unexpected
+# Corpus: n_object_repeated_null_null
+{null:null,null:null}	ERROR:unexpected
+# Not in the corpus; the same defect, reduced.
+{true:1}	ERROR:unexpected
+{1.5:1}	ERROR:unexpected

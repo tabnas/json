@@ -141,3 +141,8 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Third-party conformance corpus: nst/JSONTestSuite, fetched at a pinned
+# commit by scripts/fetch-jsontestsuite.sh. NEVER commit a third-party test
+# corpus -- it is not ours to redistribute.
+test/jsontestsuite/
