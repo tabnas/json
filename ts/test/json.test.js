@@ -5,7 +5,7 @@ const { describe, it } = require('node:test')
 const assert = require('node:assert')
 
 const Json = require('../dist/json.js')
-const { parse, make, json, registerJsonGrammar, Tabnas, TabnasError, Version } =
+const { parse, make, json, registerJsonGrammar, Tabnas, TabnasError, VERSION } =
   Json
 
 // Normalize null-prototype engine objects for deepEqual comparison.
@@ -22,9 +22,9 @@ describe('json', () => {
     assert.strictEqual(typeof make, 'function')
   })
 
-  it('exports a Version string', () => {
-    assert.strictEqual(typeof Version, 'string')
-    assert.match(Version, /^\d+\.\d+\.\d+$/)
+  it('exports a VERSION string', () => {
+    assert.strictEqual(typeof VERSION, 'string')
+    assert.match(VERSION, /^\d+\.\d+\.\d+$/)
   })
 
   it('make(opts) applies extra options after the grammar', () => {

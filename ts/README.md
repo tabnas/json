@@ -74,7 +74,8 @@ const p = make({ info: { map: true, list: true } })
 p.parse('{"a":[1,2]}')
 ```
 
-`Version` is exported as the package version string.
+`VERSION` is exported as the package version string, always equal to
+`package.json`.
 
 ## What it accepts
 

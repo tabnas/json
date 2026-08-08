@@ -20,8 +20,10 @@
 
 import { Tabnas, TabnasError, type Plugin } from '@tabnas/parser'
 
-// Current package version.
-export const Version = '1.0.0'
+// VERSION is this package's version. It MUST equal package.json "version":
+// the release orchestrator rewrites both, and test/version.test.js fails the
+// build if they drift. Mirrors `const VERSION` in go/json.go.
+export const VERSION = '0.4.4'
 
 // JSON-only lexer/parser options. Restrictive enough to mirror
 // JSON.parse: double-quoted strings only, plain decimal numbers, quoted

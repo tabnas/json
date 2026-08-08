@@ -132,7 +132,14 @@ other:
 - `json` plugin (TS) / `Json` (Go) — `use` it on a bare engine.
 - `registerJsonGrammar` / `RegisterJSONGrammar` — install just the rule
   set, for plugins layering on top.
-- `Version` const in both; kept in sync by `make publish-go`.
+- `VERSION` const in both (`ts/src/json.ts`, `go/json.go`); it MUST equal
+  `ts/package.json` "version". Nothing keeps the two runtimes in sync
+  automatically — `make publish-go` rewrites the Go const only, and the
+  release orchestrator (`admin/publish.sh`) rewrites both at release time.
+  The guard is a test in each runtime (`ts/test/version.test.js`,
+  `go/version_test.go`): each reads `ts/package.json` and fails — never
+  skips — if the constant has drifted. This exists because the TS export
+  read `1.0.0` for several releases while the package shipped `0.4.x`.
 
 ## CLI
 
@@ -182,9 +189,10 @@ go test -v ./...       # plugin + shared spec fixtures
 
 The repo-root [`Makefile`](Makefile) (adapted from voxgig/util) wraps
 both halves: `make build|test|clean` run the TS and Go sides, and
-`make publish-go V=x.y.z` injects `V` into the `const Version` in
-`go/json.go`, commits, and tags `go/vX.Y.Z`. `make publish-ts` publishes
-the TS package at its `package.json` version.
+`make publish-go V=x.y.z` injects `V` into the `const VERSION` in
+`go/json.go`, commits, and tags `go/vX.Y.Z`. It does **not** touch the TS
+side. `make publish-ts` publishes the TS package at its `package.json`
+version.
 
 ## RFC 8259 conformance — the external suite
 

@@ -17,7 +17,7 @@ for design see [`concepts.md`](concepts.md).
 | `make` | function | Build a configured parser instance. |
 | `json` | plugin | Apply strict options + register the grammar on an engine. |
 | `registerJsonGrammar` | function | Register only the rule set on an engine. |
-| `Version` | string | Package version (`"1.0.0"`). |
+| `VERSION` | string | Package version, always equal to `package.json`. |
 | `Tabnas` | class | Re-exported engine class. |
 | `TabnasError` | class | Re-exported engine error class. |
 | `JsonError` | class | Alias of `TabnasError`. |
@@ -84,9 +84,10 @@ the JSON rules under your own configuration. The value tree is built
 entirely by the engine's `$`-builtin actions; there are no
 grammar-local closures.
 
-### `Version: string`
+### `VERSION: string`
 
-The package version string, matching `package.json` (`"1.0.0"`).
+The package version string. It always equals `package.json` `"version"` —
+`test/version.test.js` fails the build if the two ever drift.
 
 ### `Tabnas` (re-export)
 
