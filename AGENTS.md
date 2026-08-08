@@ -185,7 +185,7 @@ The repo-root [`Makefile`](Makefile) (adapted from voxgig/util) wraps
 both halves: `make build|test|clean` run the TS and Go sides, and
 `make publish-go V=x.y.z` injects `V` into the `const Version` in
 `go/json.go`, commits, and tags `go/vX.Y.Z`. `make publish-ts` publishes
-the TS package at its `package.json` version (currently `1.0.0`).
+the TS package at its `package.json` version.
 
 ## RFC 8259 conformance — the external suite
 
