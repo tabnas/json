@@ -27,8 +27,10 @@ import (
 	tabnas "github.com/tabnas/parser/go"
 )
 
-// Version is the current version of the module.
-const Version = "0.4.4"
+// VERSION is this module's version. It MUST equal ts/package.json
+// "version": the release orchestrator rewrites both, and
+// TestVersionMatchesPackageJSON fails the build if they drift.
+const VERSION = "0.4.4"
 
 // JsonError is the error type returned by a failed parse — an alias of
 // the engine's *tabnas.TabnasError (with Code / Row / Col / Hint fields

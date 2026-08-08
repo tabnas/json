@@ -47,11 +47,16 @@ clean-go:
 	cd go && go clean
 
 # Publish the Go module: make publish-go V=x.y.z
-# Injects V into the Go `Version` const, commits, tags go/vX.Y.Z, and
+# Injects V into the Go `VERSION` const, commits, tags go/vX.Y.Z, and
 # (when gh is available) creates a GitHub release.
+#
+# NOTE: this rewrites go/json.go ONLY. It does NOT touch ts/src/json.ts or
+# ts/package.json — keeping the two runtimes in sync is the release
+# orchestrator's job (admin/publish.sh), and the version tests in both
+# runtimes fail the build if they ever drift.
 publish-go: test-go
 	@test -n "$(V)" || (echo "Usage: make publish-go V=x.y.z" && exit 1)
-	sed -i.bak 's/^const Version = ".*"/const Version = "$(V)"/' go/json.go
+	sed -i.bak 's/^const VERSION = ".*"/const VERSION = "$(V)"/' go/json.go
 	rm -f go/json.go.bak
 	git add go/json.go
 	git commit -m "go: v$(V)"

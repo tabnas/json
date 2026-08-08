@@ -24,7 +24,7 @@ import (
 | `Make` | func | Build a configured parser instance. |
 | `Json` | plugin func | Apply strict options + register the grammar on an engine. |
 | `RegisterJSONGrammar` | func | Register only the rule set on an engine. |
-| `Version` | const string | Module version (`"1.0.0"`). |
+| `VERSION` | const string | Module version, always equal to `ts/package.json`. |
 
 ### `func Parse(src string) (any, error)`
 
@@ -88,9 +88,11 @@ your own configuration. Returns any error from the grammar spec. The value
 tree is built entirely by the engine's `$`-builtin actions; there are no
 grammar-local closures.
 
-### `const Version string`
+### `const VERSION string`
 
-The module version string (`"1.0.0"`), kept in sync with the TS package.
+The module version string. It always equals the TS package's
+`ts/package.json` `"version"` — `TestVersionMatchesPackageJSON` fails the
+build if the two ever drift.
 
 ## Error type: `*tabnas.TabnasError`
 
