@@ -243,3 +243,32 @@ func TestRejectsExtendedGrammar(t *testing.T) {
 		}
 	}
 }
+
+// TestNumberOverflowRejected pins the Go half at encoding/json parity for
+// out-of-range exponents. These are syntactically valid JSON, and the two
+// platform oracles disagree: JSON.parse saturates to Infinity (so the TS
+// half accepts) while encoding/json fails. The engine saturates to ±Inf to
+// match TS, so the rejection lives in this plugin's number Exclude hook.
+//
+// The conformance suite covers this via its i_number_*_overflow cases, but
+// that corpus is fetched and gitignored, so it does not run in CI. This
+// test does.
+func TestNumberOverflowRejected(t *testing.T) {
+	reject := []string{
+		"1e999", "-1e999", "1e+9999", "123123e100000", "-123123e100000",
+		"1.5e+9999", "[1e999]", `{"a":1e999}`,
+	}
+	for _, src := range reject {
+		if _, err := Parse(src); err == nil {
+			t.Errorf("%s: expected rejection (encoding/json rejects), got nil error", src)
+		}
+	}
+
+	// In range, or underflow, which encoding/json accepts.
+	accept := []string{"1e308", "-1e308", "1e-999", "-1e-999", "0e0", "1e2"}
+	for _, src := range accept {
+		if _, err := Parse(src); err != nil {
+			t.Errorf("%s: expected acceptance, got %v", src, err)
+		}
+	}
+}

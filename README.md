@@ -24,6 +24,15 @@ strings, implicit objects and arrays, hex/octal numbers, leading zeros.
 If `JSON.parse` (TS/JS) or `encoding/json` (Go) would reject the input,
 so does this parser.
 
+That claim is verified against
+[nst/JSONTestSuite](https://github.com/nst/JSONTestSuite), the standard
+cross-implementation JSON parsing suite: **95/95 must-accept, 188/188
+must-reject, and all 35 implementation-defined cases matching the platform
+parser, in both runtimes**. The suite is not vendored — fetch it with
+`make json-test-suite` and the conformance tests in
+`ts/test/conformance.test.js` / `go/conformance_test.go` run as part of
+the normal test suite.
+
 ## How it works
 
 The [`tabnas`](https://github.com/tabnas/parser) engine ships **no

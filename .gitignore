@@ -141,3 +141,7 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# External JSON conformance suite (nst/JSONTestSuite), fetched by
+# test/fetch-jsontestsuite.sh — not vendored.
+test/jsontestsuite/
