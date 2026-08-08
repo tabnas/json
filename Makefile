@@ -5,7 +5,8 @@
 # repo-set go.work + node_modules symlinks (admin/scripts/link.sh).
 
 .PHONY: all build test clean build-ts build-go test-ts test-go \
-        clean-ts clean-go publish-ts publish-go tags-go reset
+        clean-ts clean-go publish-ts publish-go tags-go reset \
+        json-test-suite
 
 all: build test
 
@@ -14,6 +15,12 @@ build: build-ts build-go
 test: test-ts test-go
 
 clean: clean-ts clean-go
+
+# --- External conformance suite ---
+# Fetch nst/JSONTestSuite into test/jsontestsuite (gitignored). Both
+# runtimes' conformance tests skip until this has been run once.
+json-test-suite:
+	sh test/fetch-jsontestsuite.sh
 
 # --- TypeScript (package in ts/) ---
 build-ts:

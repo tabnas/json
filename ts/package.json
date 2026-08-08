@@ -19,6 +19,7 @@
   "scripts": {
     "build": "tsc --build src",
     "watch": "tsc --build src -w",
+    "install-json-test-suite": "sh ../test/fetch-jsontestsuite.sh",
     "clean": "rm -rf node_modules dist package-lock.json",
     "reset": "npm run clean && npm i && npm run build && npm test",
     "test": "npm run build && node --enable-source-maps --test test/**/*.test.js",

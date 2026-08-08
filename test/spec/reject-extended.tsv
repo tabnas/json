@@ -17,3 +17,7 @@ x,y,z	ERROR:unexpected
 "\\`"	ERROR:unexpected
 {"a":1}//c	ERROR:unexpected
 "abc	ERROR:unterminated_string
+{1:1}	ERROR:unexpected
+{1.5:1}	ERROR:unexpected
+{true:1}	ERROR:unexpected
+{null:null,null:null}	ERROR:unexpected

@@ -21,6 +21,7 @@ package tabnasjson
 import (
 	"math"
 	"regexp"
+	"strconv"
 	"sync"
 
 	tabnas "github.com/tabnas/parser/go"
@@ -42,6 +43,29 @@ type JsonError = tabnas.TabnasError
 // zeros ("01", "00") — is excluded and so rejected.
 var strictNumber = regexp.MustCompile(`^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$`)
 
+// excludeNonStandardNumber rejects anything the engine's lenient number
+// matcher accepts that standard JSON does not.
+//
+// Beyond the syntactic check, it also rejects out-of-range exponents
+// ("1e999", "123123e100000"). Those are syntactically valid JSON, and the
+// two platform oracles disagree on them: JS `JSON.parse` saturates to
+// Infinity, while `encoding/json` fails with "cannot unmarshal number
+// ... into Go value of type float64". This package is held to per-runtime
+// parity (AGENTS.md: JSON.parse in TS/JS, encoding/json in Go), so the TS
+// half accepts them and the Go half must not.
+//
+// The engine used to make this moot by dropping overflowing literals to
+// the text matcher; it now saturates to ±Inf to match TS, so the
+// rejection has to be stated here. Underflow ("1e-999" -> 0) is accepted
+// by encoding/json and is left alone: ParseFloat reports no error for it.
+func excludeNonStandardNumber(s string) bool {
+	if !strictNumber.MatchString(s) {
+		return true
+	}
+	f, err := strconv.ParseFloat(s, 64)
+	return err != nil && math.IsInf(f, 0)
+}
+
 // jsonOptions restricts the engine to strict JSON. Mirrors JSON_OPTIONS
 // in the TypeScript json.ts.
 func jsonOptions() tabnas.Options {
@@ -52,7 +76,7 @@ func jsonOptions() tabnas.Options {
 		Number: &tabnas.NumberOptions{
 			Hex: &f, Oct: &f, Bin: &f,
 			Sep:     "",
-			Exclude: func(s string) bool { return !strictNumber.MatchString(s) },
+			Exclude: excludeNonStandardNumber,
 		},
 		String: &tabnas.StringOptions{
 			Chars:      `"`,
@@ -184,8 +208,22 @@ func Json(j *tabnas.Tabnas, _ map[string]any) error {
 // Make builds a standard-JSON parser instance, optionally layering extra
 // options (e.g. info.Map/List/Text) over the base strict configuration.
 func Make(extra ...tabnas.Options) *tabnas.Tabnas {
-	j := tabnas.Make(jsonOptions())
-	if err := RegisterJSONGrammar(j); err != nil {
+	// Build a BARE engine and apply the strict options through the plugin
+	// (i.e. SetOptions), exactly as TS `make()` does via
+	// `new Tabnas({plugins:[json]})`. Going through the one plugin entry
+	// point is the point: the Make path and the Use(Json) path cannot
+	// drift, so there is only one definition of "strict JSON".
+	//
+	// Historical note: this also used to be load-bearing. Engine versions
+	// up to and including parser/go v0.6.1 applied only a subset of
+	// Options in the tabnas.Make() constructor and silently dropped
+	// Options.TokenSet, leaving KEY at the engine default
+	// (#TX #NR #ST #VL) so `{1:1}` / `{null:null}` parsed. Current engine
+	// versions apply TokenSet in Make() too, so both constructions now
+	// agree — but a GOWORK=off build still resolves v0.6.1, so keep this
+	// path until the engine republishes.
+	j := tabnas.Make()
+	if err := Json(j, nil); err != nil {
 		// The grammar spec is fixed and valid, so this only fires on a
 		// programmer error while editing the grammar.
 		panic(err)
