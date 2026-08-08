@@ -108,11 +108,10 @@ first.
    of `Options` (lex / parser / rule / match / fixed) in the constructor
    and silently dropped `Options.TokenSet`, leaving `KEY` at the engine
    default (`#TX #NR #ST #VL`) so `{1:1}` and `{null:null}` parsed —
-   non-string keys that `JSON.parse` and `encoding/json` reject. Because
-   a `GOWORK=off` build (the Makefile and CI) still resolves v0.6.1,
-   keep this construction until the engine republishes. The non-string-key
-   rejections are pinned in `reject-extended.tsv` and pass in both module
-   modes.
+   non-string keys that `JSON.parse` and `encoding/json` reject. Keep
+   this construction regardless — it is the design rule above, not a
+   version-specific workaround. The non-string-key rejections are pinned
+   in `reject-extended.tsv` and pass in both module modes.
 6. Keep the grammar a reusable foundation. `registerJsonGrammar` (TS) /
    `RegisterJSONGrammar` (Go) install only the JSON core so other plugins
    can layer on it; don't fold options-specific behavior into the rules.
@@ -133,7 +132,7 @@ other:
 - `json` plugin (TS) / `Json` (Go) — `use` it on a bare engine.
 - `registerJsonGrammar` / `RegisterJSONGrammar` — install just the rule
   set, for plugins layering on top.
-- `Version` const in both (`1.0.0`); kept in sync by `make publish-go`.
+- `Version` const in both; kept in sync by `make publish-go`.
 
 ## CLI
 
