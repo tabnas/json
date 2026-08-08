@@ -28,7 +28,7 @@ import (
 )
 
 // Version is the current version of the module.
-const Version = "0.4.3"
+const Version = "0.4.4"
 
 // JsonError is the error type returned by a failed parse — an alias of
 // the engine's *tabnas.TabnasError (with Code / Row / Col / Hint fields
