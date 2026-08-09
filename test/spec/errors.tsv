@@ -39,3 +39,22 @@ nul	ERROR:unexpected
 123abc	ERROR:unexpected
 [1,2]x	ERROR:unexpected
 nullnull	ERROR:unexpected
+# Trailing content after a complete top-level value. RFC 8259 permits
+# exactly one value per text, and accepting these means silently DISCARDING
+# the remainder — data loss, not mere laxness ("a" "b" would parse as "a").
+# Six are distilled from nst/JSONTestSuite n_ cases (array_with_extra_array_
+# close, object_followed_by_closing_object, array_extra_close, array_comma_
+# after_close, close_unopened_array, object_with_trailing_garbage); the rest
+# are the same defect reduced. Both runtimes reject all of them today, and
+# these rows keep it that way without needing the fetched corpus.
+[1]]	ERROR:unexpected
+{}}	ERROR:unexpected
+["x"]]	ERROR:unexpected
+[""],	ERROR:unexpected
+1]	ERROR:unexpected
+{"a": true} "x"	ERROR:unexpected
+[]]	ERROR:unexpected
+1,	ERROR:unexpected
+"a" "b"	ERROR:unexpected
+null null	ERROR:unexpected
+[1] 2	ERROR:unexpected

@@ -17,8 +17,11 @@ test: test-ts test-go
 clean: clean-ts clean-go
 
 # --- External conformance suite ---
-# Fetch nst/JSONTestSuite into test/jsontestsuite (gitignored). Both
-# runtimes' conformance tests skip until this has been run once.
+# Fetch nst/JSONTestSuite at its pinned commit into test/jsontestsuite
+# (gitignored). Both runtimes fetch it themselves before grading — `pretest`
+# in ts/, TestMain in go/ — so this target is only for fetching it by hand;
+# it is not a prerequisite of `make test`. When the corpus is missing the
+# conformance tests fail, they never skip.
 json-test-suite:
 	sh test/fetch-jsontestsuite.sh
 

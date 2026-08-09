@@ -4,13 +4,22 @@
 //
 // Runs nst/JSONTestSuite (https://github.com/nst/JSONTestSuite), the
 // standard cross-implementation JSON parsing suite, against this package.
-// The suite is not vendored; fetch it with `sh test/fetch-jsontestsuite.sh`
-// (or `make json-test-suite`) and these tests light up. Without it they
-// skip, and the RFC 8259 claim is unverified.
+//
+// The suite is not vendored; it is fetched at a pinned commit into the
+// .gitignore'd test/jsontestsuite/ by test/fetch-jsontestsuite.sh, which the
+// `pretest` npm script runs before this file — so `npm test`, locally and in
+// CI, always grades against it.
+//
+// If the corpus is absent this file THROWS rather than skips. A conformance
+// suite that quietly does not run reports a green tick that is a lie: it
+// says "RFC 8259 conformant" while measuring nothing.
 //
 // The suite's file-name prefixes are the contract:
-//   y_  MUST be accepted by a conforming parser
-//   n_  MUST be rejected by a conforming parser
+//   y_  MUST be accepted by a conforming parser — and must produce the same
+//       VALUE as the platform parser, not merely "it did not throw". The
+//       oracle, JSON.parse, is independent of this package, so the
+//       assertion is not circular.
+//   n_  MUST be rejected by a conforming parser, with an error code.
 //   i_  implementation-defined; this package's contract is parity with the
 //       platform parser, so we assert we agree with JSON.parse.
 //
@@ -26,39 +35,67 @@ const { parse } = require('../dist/json.js')
 
 const SUITE = Path.join(__dirname, '..', '..', 'test', 'jsontestsuite', 'test_parsing')
 
-// The suite has 318 cases today; a floor well under that still catches a
-// half-cloned or empty directory passing vacuously.
-const MIN_CASES = 300
+// Exact shape of the corpus at the pinned commit
+// (1ef36fa01286573e846ac449e8683f8833c5b26a). Asserted before grading, so
+// narrowing the corpus goes red instead of inflating the pass rate.
+const EXPECT = { y: 95, n: 188, i: 35, total: 318 }
 
-const present = Fs.existsSync(SUITE)
-const files = present ? Fs.readdirSync(SUITE).sort() : []
+if (!Fs.existsSync(SUITE)) {
+  throw new Error(
+    'nst/JSONTestSuite corpus not found at ' + SUITE +
+      '\n\nIt is third-party and deliberately not vendored. Fetch it' +
+      '\n(pinned commit, idempotent) and re-run:' +
+      '\n\n    sh test/fetch-jsontestsuite.sh    # or: make json-test-suite\n\n' +
+      'This fails rather than skips on purpose: a conformance suite that ' +
+      'quietly does not run reports a green tick that is a lie.',
+  )
+}
 
-describe('conformance: JSONTestSuite (RFC 8259)', { skip: present ? false : 'JSONTestSuite not fetched — run `make json-test-suite`' }, () => {
-  test('the suite is fully present', () => {
-    Assert.ok(
-      files.length >= MIN_CASES,
-      `found ${files.length} cases under ${SUITE}, expected >= ${MIN_CASES}`
+const files = Fs.readdirSync(SUITE).filter((f) => f.endsWith('.json')).sort()
+const group = (p) => files.filter((f) => f.startsWith(p))
+
+const stable = (v) => JSON.stringify(v)
+
+describe('conformance: JSONTestSuite (RFC 8259)', () => {
+  test('the corpus is intact at the pinned commit', () => {
+    Assert.deepStrictEqual(
+      {
+        y: group('y_').length,
+        n: group('n_').length,
+        i: group('i_').length,
+        total: files.length,
+      },
+      EXPECT,
+      `corpus has been narrowed or replaced (under ${SUITE}) — ` +
+        're-run `sh test/fetch-jsontestsuite.sh --force`',
     )
   })
 
-  test('y_* : accepted', () => {
+  test('y_* : accepted, with the same value as JSON.parse', () => {
     const bad = []
-    for (const f of files.filter((f) => f.startsWith('y_'))) {
+    for (const f of group('y_')) {
       const src = Fs.readFileSync(Path.join(SUITE, f), 'utf8')
-      try {
-        parse(src)
-      } catch (e) {
-        bad.push(`${f}: ${e.code || e.message}`)
-      }
-      // Sanity: the platform parser must accept it too.
+      // The oracle. If this throws, the corpus or the decode is wrong
+      // rather than the parser — worth failing loudly for either way.
       Assert.doesNotThrow(() => JSON.parse(src), `JSON.parse rejected ${f}`)
+      const want = JSON.parse(src)
+      let got
+      try {
+        got = parse(src)
+      } catch (e) {
+        bad.push(`${f}: rejected (${e.code || e.message})`)
+        continue
+      }
+      if (stable(got) !== stable(want)) {
+        bad.push(`${f}: ${stable(got)} != ${stable(want)} (JSON.parse)`)
+      }
     }
-    Assert.deepEqual(bad, [], 'must-accept cases were rejected')
+    Assert.deepEqual(bad, [], 'must-accept cases were rejected or misparsed')
   })
 
   test('n_* : rejected', () => {
     const bad = []
-    for (const f of files.filter((f) => f.startsWith('n_'))) {
+    for (const f of group('n_')) {
       const src = Fs.readFileSync(Path.join(SUITE, f), 'utf8')
       let accepted = false
       try {
@@ -77,7 +114,7 @@ describe('conformance: JSONTestSuite (RFC 8259)', { skip: present ? false : 'JSO
 
   test('i_* : same accept/reject and same value as JSON.parse', () => {
     const bad = []
-    for (const f of files.filter((f) => f.startsWith('i_'))) {
+    for (const f of group('i_')) {
       const src = Fs.readFileSync(Path.join(SUITE, f), 'utf8')
       let ours, ourOk = true
       try {
@@ -93,8 +130,8 @@ describe('conformance: JSONTestSuite (RFC 8259)', { skip: present ? false : 'JSO
       }
       if (ourOk !== platOk) {
         bad.push(`${f}: ours=${ourOk ? 'accept' : 'reject'} JSON.parse=${platOk ? 'accept' : 'reject'}`)
-      } else if (ourOk && JSON.stringify(ours) !== JSON.stringify(plat)) {
-        bad.push(`${f}: ${JSON.stringify(ours)} != ${JSON.stringify(plat)}`)
+      } else if (ourOk && stable(ours) !== stable(plat)) {
+        bad.push(`${f}: ${stable(ours)} != ${stable(plat)}`)
       }
     }
     Assert.deepEqual(bad, [], 'implementation-defined cases diverged from JSON.parse')

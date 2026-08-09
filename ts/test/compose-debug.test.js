@@ -2,10 +2,16 @@
 'use strict'
 
 // Composition test: the standard JSON grammar plugin layered with the
-// official @tabnas/debug plugin. @tabnas/debug is a devDependency, but this
-// still resolves it dynamically and SKIPS when it is absent so the suite
-// stays runnable outside the package; the `compose-debug` CI job can also
-// point TABNAS_DEBUG_PATH at a sibling checkout's built plugin.
+// official @tabnas/debug plugin.
+//
+// @tabnas/debug is a declared devDependency of this package, and CI clones
+// and links the sibling checkout, so inside this repo it is always
+// resolvable and these tests always run. They used to be marked `{ skip }`
+// whenever the require failed, which meant a broken or missing
+// devDependency turned three real assertions into a green tick nobody read.
+// Resolution failure is now a hard error: a test that quietly does not run
+// is worse than no test at all. TABNAS_DEBUG_PATH still overrides the
+// resolution, for a sibling checkout's built plugin.
 
 const { describe, it } = require('node:test')
 const assert = require('node:assert')
@@ -17,21 +23,27 @@ function loadDebug() {
   const candidates = [process.env.TABNAS_DEBUG_PATH, '@tabnas/debug'].filter(
     Boolean,
   )
+  const errs = []
   for (const c of candidates) {
     try {
       return require(c).Debug
-    } catch {
-      /* try next */
+    } catch (e) {
+      errs.push(`${c}: ${e && e.message}`)
     }
   }
-  return null
+  throw new Error(
+    '@tabnas/debug could not be resolved, so the json + debug composition ' +
+      'tests cannot run. It is a devDependency of this package and must be ' +
+      'installed (or set TABNAS_DEBUG_PATH to a built checkout). This is a ' +
+      'hard failure on purpose — it used to skip silently.\n  ' +
+      errs.join('\n  '),
+  )
 }
 
 const Debug = loadDebug()
-const skip = Debug ? false : '@tabnas/debug not available (set TABNAS_DEBUG_PATH)'
 
 describe('compose: json + @tabnas/debug', () => {
-  it('parses normally with the debug plugin installed', { skip }, () => {
+  it('parses normally with the debug plugin installed', () => {
     const tn = new Tabnas({ plugins: [json] })
     tn.use(Debug, { print: false, trace: false })
     assert.deepStrictEqual(
@@ -40,7 +52,7 @@ describe('compose: json + @tabnas/debug', () => {
     )
   })
 
-  it('debug.describe() introspects the JSON grammar', { skip }, () => {
+  it('debug.describe() introspects the JSON grammar', () => {
     const tn = new Tabnas({ plugins: [json] })
     tn.use(Debug, { print: false, trace: false })
     const desc = tn.debug.describe()
@@ -50,7 +62,7 @@ describe('compose: json + @tabnas/debug', () => {
     }
   })
 
-  it('debug.model() returns the structured JSON grammar', { skip }, () => {
+  it('debug.model() returns the structured JSON grammar', () => {
     const tn = new Tabnas({ plugins: [json] })
     tn.use(Debug, { print: false, trace: false })
     const m = tn.debug.model()

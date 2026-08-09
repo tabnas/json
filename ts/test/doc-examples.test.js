@@ -114,7 +114,13 @@ function importsToRequire(code) {
 }
 
 // Rewrite `<expr>  // => <expected>` lines into __eq(expr, expected) calls.
-const ARROW = /\/\/\s*=>(.*)$/
+//
+// The `m` flag matters: this regex is used BOTH per line and, as the opt-in
+// gate below, against a whole block joined with newlines. Without `m`, `$`
+// anchors to the end of the entire string, so a block whose `// =>` was not
+// on its last line failed the gate and every assertion in it was silently
+// dropped from the suite.
+const ARROW = /\/\/\s*=>(.*)$/m
 function rewriteAssertions(code) {
   let count = 0
   const out = code.split('\n').map((line) => {
@@ -136,7 +142,11 @@ function deepEq(actual, expected) {
   try {
     assert.deepStrictEqual(actual, expected)
     return
-  } catch {}
+  } catch {
+    // NOT a swallowed failure: this falls through to the second,
+    // JSON-normalised comparison below, which throws if the values really
+    // differ. Every path either returns on a pass or throws on a mismatch.
+  }
   // Fall back to JSON-normalised compare (null-proto objects, etc.).
   assert.deepStrictEqual(norm(actual), norm(expected))
 }
@@ -185,7 +195,17 @@ describe('doc-examples', () => {
   }
 
   it('found at least one tested example (sanity)', () => {
-    // Not a hard failure if a repo has no `// =>` examples yet.
-    assert.ok(testable >= 0, `tested ${testable} doc example block(s)`)
+    // This guard used to read `testable >= 0`, which is true for every
+    // possible value and so asserted nothing: deleting every `// =>`
+    // example, or breaking the doc discovery or fence extraction above,
+    // left the suite green with zero examples actually executed. This
+    // repo's README and ts/doc/*.md carry asserted examples, so the honest
+    // floor is "at least one ran".
+    assert.ok(
+      testable >= 1,
+      `no doc example block with a '// =>' assertion was found or run ` +
+        `(scanned ${files.length} markdown file(s)) — doc discovery or ` +
+        `fence extraction is broken`,
+    )
   })
 })
