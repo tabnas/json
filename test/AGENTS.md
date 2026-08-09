@@ -51,3 +51,25 @@ both runtimes without touching either runner.
   case fix TS first and pin the corrected behaviour here.
 - A new fixture must pass in BOTH runtimes: run `go test ./...` (from `go/`)
   and `npm test` (from `ts/`) before considering it done.
+
+## The external corpus
+
+`spec/*.tsv` is the *parity* contract between the two runtimes. It is not,
+by itself, evidence of RFC conformance — a hand-written fixture set only
+tests what its author thought to write down. The external check is
+[nst/JSONTestSuite](https://github.com/nst/JSONTestSuite) (318 cases: 95
+`y_` must-accept, 188 `n_` must-reject, 35 `i_` implementation-defined),
+graded by `ts/test/conformance.test.js` and `go/conformance_test.go`.
+
+That corpus is third-party and is **never committed**. `fetch-jsontestsuite.sh`
+clones it at a pinned commit into the gitignored `jsontestsuite/`, and both
+runtimes run that fetch themselves — `pretest` in ts/, `TestMain` in go/ —
+so it is present in CI as well as locally. Both runners assert the census
+(95/188/35) before grading, and both **fail rather than skip** when the
+corpus is absent: a conformance test that quietly does not run reports a
+green tick that is a lie.
+
+The two layers are complementary. When the corpus turns up a real defect,
+fix it and then distil the case into a `spec/*.tsv` row, so the behaviour
+stays pinned even without a network fetch — that is where the
+trailing-content rows at the end of `errors.tsv` came from.
