@@ -2,101 +2,63 @@
 'use strict'
 
 // Cross-runtime conformance, driven by the shared `test/spec/*.tsv` fixtures
-// at the repo root — the same convention @tabnas/parser and @tabnas/abnf use
-// (see ../../test/AGENTS.md).
+// at the repo root (see ../../test/AGENTS.md).
 //
-// `go/parity_test.go` discovers and runs the SAME files, so the two
-// implementations cannot drift without one of them going red. Every row is
+// The fixture loader, the escape codec, the `ERROR:<code>` contract and the
+// row loop all come from @tabnas/support, whose Go half `go/parity_test.go`
+// uses to run the SAME files — so the two implementations cannot drift
+// without one of them going red, and neither can the two loaders.
+//
+// What is left here is only what is specific to @tabnas/json: every row is
 // also cross-checked against the platform JSON parser, since this package's
-// contract is plain JSON.
+// contract IS plain JSON.
 
-const { describe, it } = require('node:test')
-const assert = require('node:assert')
-const Fs = require('node:fs')
-const Path = require('node:path')
+const { findSpecDir, makeRunner } = require('@tabnas/support')
 
 const { parse, TabnasError } = require('../dist/json.js')
 
-const specDir = Path.join(__dirname, '..', '..', 'test', 'spec')
+makeRunner({
+  parse: (input) => {
+    const value = parse(input)
+    const text = JSON.stringify(value)
 
-// Decode the escape set used in the input column. Kept byte-identical to the
-// Go loader so both runtimes feed the parser the exact same source text.
-function unescape(s) {
-  if (!s.includes('\\')) return s
-  let out = ''
-  for (let i = 0; i < s.length; i++) {
-    const c = s[i]
-    if ('\\' === c && i + 1 < s.length) {
-      const n = s[i + 1]
-      if ('n' === n) { out += '\n'; i++; continue }
-      if ('r' === n) { out += '\r'; i++; continue }
-      if ('t' === n) { out += '\t'; i++; continue }
-      if ('\\' === n) { out += '\\'; i++; continue }
+    // The platform parser must accept it, and produce the same thing. A
+    // throw here surfaces as a failed row, naming the fixture and line.
+    const platform = JSON.stringify(JSON.parse(input))
+    if (text !== platform) {
+      throw new Error(
+        `disagrees with the platform parser: ${text} != ${platform}`)
     }
-    out += c
-  }
-  return out
-}
 
-function loadSpec(file) {
-  const body = Fs.readFileSync(Path.join(specDir, file), 'utf8')
-  const lines = body.split(/\r?\n/)
-  const rows = []
-  // Line 1 is the header naming the columns.
-  for (let i = 1; i < lines.length; i++) {
-    const raw = lines[i]
-    // A comment line starts with '#' and has no tab; a data row always has
-    // at least one (input + expected), so '#'-leading sources still work.
-    if ('' === raw || (raw.startsWith('#') && !raw.includes('\t'))) continue
-    const cols = raw.split('\t')
-    if (cols.length < 2) {
-      throw new Error(`${file}:${i + 1}: expected at least 2 tab-separated columns`)
+    return text
+  },
+
+  // Compared as TEXT, not structurally: the expected column is written
+  // with `JSON.stringify` semantics, and comparing the rendering is what
+  // pins KEY ORDER as well as value. (Go pins order separately, in
+  // TestSpecValidOrder — it compares by value here.)
+  parseExpected: (expected) => expected,
+
+  // Two sanity checks the code comparison would not otherwise make. Each
+  // answers a pseudo-code rather than throwing, so the failure reads as
+  // "failed with code <what went wrong>, expected <the row's code>" and
+  // names the row.
+  errorCode: (err, row) => {
+    if (!(err instanceof TabnasError)) {
+      return `not-a-TabnasError(${err})`
     }
-    rows.push({ line: i + 1, input: unescape(cols[0]), expected: cols[1] })
-  }
-  return rows
-}
-
-function runSpec(file) {
-  const rows = loadSpec(file)
-  describe('spec: ' + file, () => {
-    assert.ok(0 < rows.length, file + ': no cases')
-    for (const row of rows) {
-      it(`row ${row.line}: ${row.input}`, () => {
-        if (row.expected.startsWith('ERROR')) {
-          const code = row.expected.slice('ERROR'.length).replace(/^:/, '')
-          assert.throws(
-            () => parse(row.input),
-            (err) => {
-              assert.ok(err instanceof TabnasError,
-                `expected TabnasError, got ${err}`)
-              // The error code is part of the shared parity contract: both
-              // runtimes must reject the input with the same code.
-              assert.strictEqual(err.code, code, `input: ${row.input}`)
-              return true
-            },
-          )
-          // Sanity: the platform parser must reject it too.
-          assert.throws(() => JSON.parse(row.input),
-            `JSON.parse accepted: ${row.input}`)
-          return
-        }
-
-        const value = parse(row.input)
-        assert.strictEqual(JSON.stringify(value), row.expected,
-          `${file}:${row.line}`)
-        assert.strictEqual(
-          JSON.stringify(value),
-          JSON.stringify(JSON.parse(row.input)),
-          `${file}:${row.line}: disagrees with the platform parser`,
-        )
-      })
+    try {
+      JSON.parse(row.unesc(0))
+      return 'the-platform-parser-accepted-it'
     }
-  })
-}
-
-// Auto-discover every fixture: adding a .tsv runs it in both runtimes
-// without touching either runner.
-for (const file of Fs.readdirSync(specDir).sort()) {
-  if (file.endsWith('.tsv')) runSpec(file)
-}
+    catch {
+      // Rejected by both, as it must be.
+    }
+    return err.code
+  },
+})
+  // `findSpecDir` walks up from this file to the repo root's `test/spec`,
+  // so moving the suite does not mean recounting `..` hops. `dir` then
+  // auto-discovers every fixture in it, so adding a .tsv runs it in both
+  // runtimes without touching either runner.
+  .dir(findSpecDir(__dirname))
