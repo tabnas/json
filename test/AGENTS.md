@@ -35,11 +35,26 @@ is plain JSON.
 
 ## Who runs what
 
-- TypeScript: `ts/test/parity.test.js` — reads `../../test/spec`.
-- Go: `go/parity_test.go` — `TestSpec` globs `../test/spec/*.tsv`.
+- TypeScript: `ts/test/parity.test.js` — `makeRunner(...).dir(...)`.
+- Go: `go/parity_test.go` — `support.Runner{...}.Dir(t, dir)`.
+
+Both are a dozen lines holding only what is specific to this package: the
+cross-check against the platform parser, and (in Go) unwrapping the
+insertion-ordered map. Everything else — finding `test/spec`, reading the
+file, decoding escapes, the `ERROR:` contract, the comparison, the
+`<file>:<line>` in a failure message — comes from
+[`@tabnas/support`](https://github.com/tabnas/support) and its Go half, so
+the two loaders cannot drift from each other either.
+
+The Go cross-check for rejected input is its own walk,
+`TestSpecRejectedByBoth`, because the runner hands its error hook an error
+rather than the input that caused it.
 
 Both discover files by directory listing: adding a `.tsv` here runs it in
-both runtimes without touching either runner.
+both runtimes without touching either runner. An empty fixture, and a spec
+directory with no fixtures in it, both **fail** — a runner that reports
+green having run nothing is indistinguishable from coverage that was never
+there.
 
 ## Rules
 

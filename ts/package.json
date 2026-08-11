@@ -49,6 +49,7 @@
     "@tabnas/debug": "*",
     "@tabnas/parser": "*",
     "@tabnas/railroad": "*",
+    "@tabnas/support": "*",
     "@types/node": "20.x",
     "typescript": "5.x"
   },
