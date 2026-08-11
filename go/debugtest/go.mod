@@ -9,7 +9,7 @@ go 1.24.7
 
 require (
 	github.com/tabnas/debug/go v0.0.0
-	github.com/tabnas/json/go v0.0.0
+	github.com/tabnas/json/go v0.5.2
 )
 
 require github.com/tabnas/parser/go v0.0.0 // indirect
