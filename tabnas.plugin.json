@@ -1,0 +1,18 @@
+{
+  "$schema": "https://tabnas.dev/schema/plugin.schema.json",
+  "name": "@tabnas/json",
+  "go": "github.com/tabnas/json/go",
+  "description": "A standard JSON parser (RFC 8259) for the tabnas engine.",
+  "engine": "@tabnas/parser",
+  "extensions": [
+    ".json"
+  ],
+  "mediaTypes": [
+    "application/json"
+  ],
+  "specDir": "test/spec",
+  "errorCodes": [],
+  "docs": "https://tabnas.dev/docs/packages",
+  "repository": "https://github.com/tabnas/json",
+  "versionSource": "ts/package.json"
+}
