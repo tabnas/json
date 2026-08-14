@@ -5,6 +5,7 @@
   "type": "commonjs",
   "types": "dist/json.d.ts",
   "description": "A standard JSON parser (RFC 8259).",
+  "homepage": "https://github.com/tabnas/json",
   "keywords": [
     "json",
     "parser",
