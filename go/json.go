@@ -197,7 +197,19 @@ func RegisterJSONGrammar(j *tabnas.Tabnas) error {
 		},
 	}
 
-	return j.Grammar(&tabnas.GrammarSpec{V: 2, Rule: rules})
+	// A Go map has no order, so without RuleOrder the engine falls back to
+	// sorted names and (*Tabnas).RuleNames reports the grammar alphabetically
+	// -- [elem list map pair val] -- where TypeScript reports it as declared:
+	// [val map list pair elem]. Anything built on RuleNames inherits that,
+	// railroad's extracted Go model among them.
+	//
+	// The names are written in the order the `rules` literal above declares
+	// them, which is the order ts/src/json.ts declares them in.
+	return j.Grammar(&tabnas.GrammarSpec{
+		V:         2,
+		Rule:      rules,
+		RuleOrder: []string{"val", "map", "list", "pair", "elem"},
+	})
 }
 
 // Json is the standard plugin form: apply the strict JSON options, then

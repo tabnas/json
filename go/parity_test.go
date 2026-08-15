@@ -115,3 +115,27 @@ func TestSpecRejectedByBoth(t *testing.T) {
 		t.Fatal("no ERROR rows found — the cross-check asserted nothing")
 	}
 }
+
+// TypeScript is canonical, and it reports this grammar's rules in the order
+// they are declared: val, map, list, pair, elem. A Go map has no order, so
+// without GrammarSpec.RuleOrder the engine falls back to sorted names and
+// RuleNames answers [elem list map pair val] instead. That is not cosmetic:
+// railroad's extracted Go model, and anything else built on RuleNames, renders
+// in whatever order this returns.
+//
+// Hard-coded rather than derived, deliberately. Reading the order back out of
+// the same literal that sets it would assert nothing; this is a copy of what
+// ts/src/json.ts declares, so it fails if either side moves.
+func TestRuleOrderMatchesTypeScriptDeclarationOrder(t *testing.T) {
+	want := []string{"val", "map", "list", "pair", "elem"}
+	got := Make().RuleNames()
+
+	if len(got) != len(want) {
+		t.Fatalf("RuleNames() = %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("RuleNames() = %v, want %v (differs at %d)", got, want, i)
+		}
+	}
+}
