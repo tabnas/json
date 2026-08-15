@@ -137,7 +137,7 @@ paying the build cost on every call. `make` exists for when you need a
 The TS implementation in `ts/src/json.ts` is the source of truth; the Go
 port in `go/json.go` mirrors it line-for-line where it can. Both suites
 run the same conformance fixtures in `test/spec/*.tsv`
-(`json-valid.tsv` = input → expected output, `json-errors.tsv` = input →
+(`valid.tsv` = input → expected output, `errors.tsv` = input →
 error code). The error **codes** are part of that shared contract: both
 runtimes must reject the same input with the same code. See the Go
 concepts doc's "Differences from the TS version" section for the small,

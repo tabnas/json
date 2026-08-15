@@ -66,9 +66,10 @@ first.
 2. The shared fixtures in `test/spec/*.tsv` are the parity contract.
    Both suites run them and both must stay green. The Go suite resolves
    them at `../test/spec` (see `go/parity_test.go` `specDir`).
-3. Error **codes** are part of the shared contract. `json-errors.tsv` is
-   `input → code`, and both suites assert the exact code. The codes in
-   use are `unexpected`, `unterminated_string`, and `invalid_unicode`.
+3. Error **codes** are part of the shared contract. `errors.tsv` and
+   `reject-extended.tsv` are both `input → ERROR:<code>`, and both suites
+   assert the exact code. The codes in use are `unexpected`,
+   `unterminated_string`, and `invalid_unicode`.
    The runtimes must reject the same input with the same code; if you add
    an error fixture, verify the code is identical in both runtimes before
    committing it.
@@ -163,8 +164,8 @@ Both runtimes accept exactly the standard JSON escapes (`\" \\ \/ \b \f
 `\u{...}` braced form (`\u{41}` → `invalid_unicode`, since `{` is not a
 hex digit on the plain `\uXXXX` path). This requires the engine's
 `string.escapeStrict` option; the strict config is set in `JSON_OPTIONS`
-/ `jsonOptions`. These rejections are covered by `json-errors.tsv` with
-shared codes. Do not add these escapes to `json-valid.tsv` — the valid
+/ `jsonOptions`. These rejections are covered by `errors.tsv` with
+shared codes. Do not add these escapes to `valid.tsv` — the valid
 runner cross-checks against the platform `JSON.parse`, which rejects them.
 
 ## Build & test

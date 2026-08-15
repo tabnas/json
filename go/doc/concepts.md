@@ -115,7 +115,7 @@ port in `go/json.go` mirrors it line-for-line where it can — both use the
 engine's declarative grammar spec, so the two grammars read almost
 identically. Both suites run the same conformance fixtures in
 `test/spec/*.tsv` (`valid.tsv` = input → expected output,
-`json-errors.tsv` = input → error code; the Go suite resolves them at
+`errors.tsv` = input → error code; the Go suite resolves them at
 `../test/spec`). The error **codes** are part of that shared contract:
 both runtimes must reject the same input with the same code.
 
