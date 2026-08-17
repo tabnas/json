@@ -167,10 +167,10 @@ export function registerJsonGrammar(tn: Tabnas): void {
         close: [
           // Comma means a new pair at same pair-key level. @setval$
           // assigns the pair; on every close alt (fan-out).
-          { s: '#CA', r: 'pair', a: '@setval$', g: 'map,pair,json' },
+          { s: '#CA', r: 'pair', a: '@setval$', g: 'map,pair,comma,json' },
 
           // End of map.
-          { s: '#CB', b: 1, a: '@setval$', g: 'map,pair,json' },
+          { s: '#CB', b: 1, a: '@setval$', g: 'map,pair,close,json' },
         ],
       },
 
@@ -182,10 +182,10 @@ export function registerJsonGrammar(tn: Tabnas): void {
         ],
         close: [
           // Next element. @push$ appends the element.
-          { s: '#CA', r: 'elem', a: '@push$', g: 'list,elem,json' },
+          { s: '#CA', r: 'elem', a: '@push$', g: 'list,elem,comma,json' },
 
           // End of list.
-          { s: '#CS', b: 1, a: '@push$', g: 'list,elem,json' },
+          { s: '#CS', b: 1, a: '@push$', g: 'list,elem,close,json' },
         ],
       },
     },

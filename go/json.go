@@ -181,8 +181,8 @@ func RegisterJSONGrammar(j *tabnas.Tabnas) error {
 				{S: "#KEY #CL", P: "val", U: map[string]any{"pair": true}, A: "@key$", G: "map,pair,key,json"},
 			},
 			Close: []*tabnas.GrammarAltSpec{
-				{S: "#CA", R: "pair", A: "@setval$", G: "map,pair,json"},
-				{S: "#CB", B: 1, A: "@setval$", G: "map,pair,json"},
+				{S: "#CA", R: "pair", A: "@setval$", G: "map,pair,comma,json"},
+				{S: "#CB", B: 1, A: "@setval$", G: "map,pair,close,json"},
 			},
 		},
 		// elem: a value inside a list. @push$ appends the built value.
@@ -191,8 +191,8 @@ func RegisterJSONGrammar(j *tabnas.Tabnas) error {
 				{P: "val", G: "list,elem,val,json"},
 			},
 			Close: []*tabnas.GrammarAltSpec{
-				{S: "#CA", R: "elem", A: "@push$", G: "list,elem,json"},
-				{S: "#CS", B: 1, A: "@push$", G: "list,elem,json"},
+				{S: "#CA", R: "elem", A: "@push$", G: "list,elem,comma,json"},
+				{S: "#CS", B: 1, A: "@push$", G: "list,elem,close,json"},
 			},
 		},
 	}

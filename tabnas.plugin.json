@@ -10,6 +10,15 @@
   "mediaTypes": [
     "application/json"
   ],
+  "languageId": "json",
+  "pluginKind": "grammar",
+  "grammarKind": "data",
+  "lexStream": "clean",
+  "syncGroups": [
+    "end",
+    "comma",
+    "close"
+  ],
   "specDir": "test/spec",
   "clib": {
     "dir": "go/clib",
