@@ -10,6 +10,15 @@
   "mediaTypes": [
     "application/json"
   ],
+  "languageId": "json",
+  "pluginKind": "grammar",
+  "grammarKind": "data",
+  "lexStream": "clean",
+  "syncGroups": [
+    "end",
+    "comma",
+    "close"
+  ],
   "specDir": "test/spec",
   "errorCodes": [],
   "docs": "https://tabnas.dev/docs/packages",
