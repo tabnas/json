@@ -11,6 +11,8 @@ A standard JSON parser for TypeScript/JavaScript and Go, built as a
 grammar plugin for the [`tabnas`](https://github.com/tabnas/parser)
 parsing engine.
 
+Docs, guides, the error reference and the playground: **[tabnas.dev](https://tabnas.dev)**.
+
 ```
 {"a":1,"b":[2,3]}  →  { a: 1, b: [2, 3] }
 ```
