@@ -12,7 +12,7 @@ require (
 	github.com/tabnas/json/go v0.5.6
 )
 
-require github.com/tabnas/parser/go v0.0.0 // indirect
+require github.com/tabnas/parser/go v0.8.11
 
 replace github.com/tabnas/json/go => ../
 
