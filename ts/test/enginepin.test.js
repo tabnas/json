@@ -35,9 +35,9 @@
  *     the lockfile is not what the TS side loads and its version legitimately
  *     runs ahead of the last publish. Not compared — but the lock-vs-go.mod
  *     check still applies, because that is what every local run uses.
- *     On windows link_siblings cannot always symlink and copies instead, so
- *     lstat alone does not answer "is this the sibling?" — see
- *     isSiblingSource.
+ *     On windows the substitution is a copy even when the log says "linked"
+ *     (MSYS `ln -s` copies and exits 0), so lstat alone does not answer
+ *     "is this the sibling?" — see isSiblingSource.
  *
  * Fixing a failure: `npm update --package-lock-only <pkg>` in ts/, then set
  * the same version in go/go.mod, `go mod tidy`, and `npm i`.
@@ -133,14 +133,21 @@ function enginePinProblems({ lock, goMod, pkg, installed }) {
 
 // --- reading the real repository ------------------------------------
 
-// A symlink is not the only way a sibling gets into node_modules. On the
-// windows runner unprivileged symlink creation is refused, so link_siblings
-// falls back to `cp -R` and says so ("copied <name> <- <dep>/ts (symlink
-// unavailable)"). That copy is an ordinary directory carrying the SIBLING's
-// version, which lstat cannot tell apart from a registry install — so the run
-// read it as "registry install 0.9.0" against a lockfile pinning 0.8.10 and
-// failed, on windows only, whenever the symlink happened to be refused, over
-// a tree that was exactly what CI meant to build against.
+// A symlink is not the only way a sibling gets into node_modules, and on
+// windows it is not even the usual one. link_siblings runs `ln -s` and, when
+// that exits 0 leaving a readable package.json, logs "linked" — but under
+// MSYS `ln -s` COPIES the tree rather than linking it and still exits 0. So
+// the windows log reads "linked @tabnas/support -> support/ts" while what
+// landed on disk is an ordinary directory. (The explicit `cp -R` fallback
+// beside it reaches the same place; neither leaves a symlink.)
+//
+// That directory carries the SIBLING's version, which lstat cannot tell from
+// a registry install — so on windows the exemption never applied and every
+// sibling was compared against the lockfile. It passed only while the two
+// happened to agree, and failed the moment one moved: @tabnas/support 0.3.4
+// read as "registry install" against a lockfile pinning 0.3.3, over a tree
+// that was exactly what CI meant to build against. Not flakiness; a signal
+// that is simply absent on one platform.
 //
 // The symlink was only ever standing in for the real question — is what is
 // installed the sibling checkout? — so ask that instead. Pure, so both
