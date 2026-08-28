@@ -30,11 +30,14 @@
  *
  *   - Registry install (a real directory): its version must equal the
  *     lockfile's.
- *   - Sibling source (a symlink): link_siblings in polyglot-ci REPLACES the
- *     published copy with a link to ../<dep>/ts, so the lockfile is not what
- *     the TS side loads and its version legitimately runs ahead of the last
- *     publish. Not compared — but the lock-vs-go.mod check still applies,
- *     because that is what every local run uses.
+ *   - Sibling source (a symlink, OR a copy of one): link_siblings in
+ *     polyglot-ci REPLACES the published copy with a link to ../<dep>/ts, so
+ *     the lockfile is not what the TS side loads and its version legitimately
+ *     runs ahead of the last publish. Not compared — but the lock-vs-go.mod
+ *     check still applies, because that is what every local run uses.
+ *     On windows link_siblings cannot always symlink and copies instead, so
+ *     lstat alone does not answer "is this the sibling?" — see
+ *     isSiblingSource.
  *
  * Fixing a failure: `npm update --package-lock-only <pkg>` in ts/, then set
  * the same version in go/go.mod, `go mod tidy`, and `npm i`.
@@ -64,7 +67,7 @@ const SHARED = [
 // A guard whose only expression is an it() that currently passes cannot be
 // told apart from one that never fires.
 //
-// `installed` maps package name -> {version, linked} | null.
+// `installed` maps package name -> {version, fromSibling} | null.
 function enginePinProblems({ lock, goMod, pkg, installed }) {
   const problems = []
   const packages = (lock && lock.packages) || {}
@@ -89,7 +92,7 @@ function enginePinProblems({ lock, goMod, pkg, installed }) {
     }
 
     const got = installed && installed[npm]
-    if (null != got && !got.linked && !entry.link && got.version !== entry.version) {
+    if (null != got && !got.fromSibling && !entry.link && got.version !== entry.version) {
       problems.push(
         `node_modules/${npm} is ${got.version} but ts/package-lock.json ` +
         `pins ${entry.version}. The pins can agree with each other and still ` +
@@ -130,12 +133,45 @@ function enginePinProblems({ lock, goMod, pkg, installed }) {
 
 // --- reading the real repository ------------------------------------
 
+// A symlink is not the only way a sibling gets into node_modules. On the
+// windows runner unprivileged symlink creation is refused, so link_siblings
+// falls back to `cp -R` and says so ("copied <name> <- <dep>/ts (symlink
+// unavailable)"). That copy is an ordinary directory carrying the SIBLING's
+// version, which lstat cannot tell apart from a registry install — so the run
+// read it as "registry install 0.9.0" against a lockfile pinning 0.8.10 and
+// failed, on windows only, whenever the symlink happened to be refused, over
+// a tree that was exactly what CI meant to build against.
+//
+// The symlink was only ever standing in for the real question — is what is
+// installed the sibling checkout? — so ask that instead. Pure, so both
+// branches can be asserted rather than assumed.
+function isSiblingSource({ linked, version, siblingVersion }) {
+  if (linked) return true
+  // A copy counts only if there IS a sibling beside this repo and what is
+  // installed is that version. A registry install on a machine with no
+  // sibling checkout has nothing to match, and one that differs from the
+  // sibling is still a registry install.
+  return null != siblingVersion && null != version && siblingVersion === version
+}
+
+// The sibling sits beside this repo at ../<dep>/ts — the layout
+// link_siblings uses ($ROOT/$dep/ts), and the one CONTRIBUTING.md asks for.
+function siblingVersionOf(name) {
+  const dep = name.replace(/^@[^/]+\//, '')
+  try {
+    return JSON.parse(fs.readFileSync(
+      path.join(REPO, '..', dep, 'ts', 'package.json'), 'utf8')).version
+  } catch {
+    return null
+  }
+}
+
 function readInstalled(name) {
   const dir = path.join(REPO, 'ts', 'node_modules', name)
   let st
   try {
-    // lstat, not stat: the symlink IS the signal that this came from a
-    // sibling checkout rather than the registry.
+    // lstat, not stat: a symlink here is conclusive sibling source. Its
+    // ABSENCE is not conclusive, which is what isSiblingSource settles.
     st = fs.lstatSync(dir)
   } catch {
     return null
@@ -145,7 +181,14 @@ function readInstalled(name) {
     version = JSON.parse(
       fs.readFileSync(path.join(dir, 'package.json'), 'utf8')).version
   } catch { /* present but unreadable; reported as a mismatch below */ }
-  return { version, linked: st.isSymbolicLink() }
+  return {
+    version,
+    fromSibling: isSiblingSource({
+      linked: st.isSymbolicLink(),
+      version,
+      siblingVersion: siblingVersionOf(name),
+    }),
+  }
 }
 
 const read = (...p) => fs.readFileSync(path.join(REPO, ...p), 'utf8')
@@ -187,7 +230,7 @@ describe('engine pin', () => {
     const mode = SHARED.map(({ npm }) => {
       const g = REAL.installed[npm]
       return `${npm}: ` + (null == g ? 'not installed'
-        : g.linked ? `sibling source (${g.version})`
+        : g.fromSibling ? `sibling source (${g.version})`
           : `registry install (${g.version})`)
     }).join(', ')
     assert.deepEqual(
@@ -233,10 +276,36 @@ describe('engine pin', () => {
 
     it('node_modules is stale against a lockfile-only update', () => {
       const p = enginePinProblems(base({
-        installed: { '@tabnas/parser': { version: '0.2.0', linked: false } },
+        installed: { '@tabnas/parser': { version: '0.2.0', fromSibling: false } },
       }))
       assert.equal(p.length, 1)
       assert.match(p[0], /node_modules\/@tabnas\/parser is 0\.2\.0 but/)
+    })
+  })
+
+  // How the sibling got there is the platform's choice, not a difference the
+  // guard should see. This is the branch that made CI red on windows only:
+  // the copy fallback is sibling source with no symlink to prove it.
+  describe('sibling source is recognised however it was substituted', () => {
+
+    it('a symlink is sibling source', () => {
+      assert.equal(isSiblingSource(
+        { linked: true, version: '0.9.0', siblingVersion: null }), true)
+    })
+
+    it('a copy matching the sibling checkout is sibling source', () => {
+      assert.equal(isSiblingSource(
+        { linked: false, version: '0.9.0', siblingVersion: '0.9.0' }), true)
+    })
+
+    it('a registry install with no sibling checkout is not', () => {
+      assert.equal(isSiblingSource(
+        { linked: false, version: '0.8.10', siblingVersion: null }), false)
+    })
+
+    it('a registry install beside a different sibling is not', () => {
+      assert.equal(isSiblingSource(
+        { linked: false, version: '0.8.10', siblingVersion: '0.9.0' }), false)
     })
   })
 
@@ -246,8 +315,8 @@ describe('engine pin', () => {
     assert.deepEqual(
       enginePinProblems(base({
         installed: {
-          '@tabnas/parser': { version: '0.9.0-dev', linked: true },
-          '@tabnas/support': { version: '0.4.0-dev', linked: true },
+          '@tabnas/parser': { version: '0.9.0-dev', fromSibling: true },
+          '@tabnas/support': { version: '0.4.0-dev', fromSibling: true },
         },
       })),
       [],
