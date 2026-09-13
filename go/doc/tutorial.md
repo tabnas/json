@@ -13,12 +13,12 @@ The import path is `github.com/tabnas/json/go` and the package name is
 
 ## What you are building
 
-`tabnasjson` is a standard JSON parser — it accepts exactly what
+`tabnasjson` is a standard JSON parser: it accepts exactly what
 `encoding/json` accepts (RFC 8259 / ECMA-404) and nothing more. By the end
 you will have used it to turn JSON text into Go values, caught a parse
 error, and built a JSON-with-comments parser on top of it.
 
-## Step 1 — Add the dependency
+## Step 1: Add the dependency
 
 ```bash
 go get github.com/tabnas/json/go
@@ -26,9 +26,9 @@ go get github.com/tabnas/json/go
 
 The module depends on the `tabnas` engine, `github.com/tabnas/parser/go`.
 Until that is published, it is resolved with a `replace` directive to a
-sibling checkout — see the "Develop" section of [`../README.md`](../README.md).
+sibling checkout; see the "Develop" section of [`../README.md`](../README.md).
 
-## Step 2 — Parse a value
+## Step 2: Parse a value
 
 The whole library is reachable through one function: `Parse`. Give it a
 JSON string; get back the Go value and an error.
@@ -54,7 +54,7 @@ func main() {
 `Parse` returns values using the same Go types as `encoding/json`: `nil`,
 `bool`, `float64`, `string`, `[]any`, and `map[string]any`.
 
-## Step 3 — Parse objects and arrays
+## Step 3: Parse objects and arrays
 
 The same `Parse` handles structured data. Nesting works to any depth.
 
@@ -71,7 +71,7 @@ nested, _ := tabnasjson.Parse(`{"a": {"b": [true, null]}}`)
 
 Insignificant whitespace between tokens is ignored, as in standard JSON.
 
-## Step 4 — See what gets rejected
+## Step 4: See what gets rejected
 
 This parser is *strict*. Anything `encoding/json` would reject, it rejects
 too. Each of these returns a non-nil error:
@@ -87,10 +87,10 @@ tabnasjson.Parse(`1 // hi`) // comment
 That strictness is the point: `tabnasjson` is the baseline that relaxed
 variants extend.
 
-## Step 5 — Handle a parse error
+## Step 5: Handle a parse error
 
 Invalid input returns a `*tabnas.TabnasError`. Type-assert (or use
-`errors.As`) to read its structured fields — `Code`, `Row`, `Col`:
+`errors.As`) to read its structured fields: `Code`, `Row`, `Col`:
 
 ```go
 import (
@@ -110,7 +110,7 @@ if errors.As(err, &je) {
 
 The `Error()` string is a human-readable, source-pointing message.
 
-## Step 6 — Build your own parser instance
+## Step 6: Build your own parser instance
 
 `Parse` uses one shared, lazily-built engine. When you want to customize
 the parser, build your own instance with `Make`:
@@ -121,10 +121,10 @@ v, _ := p.Parse(`[1,2]`)
 // v is []any{1, 2}
 ```
 
-An instance is reusable and safe for concurrent use — build it once, call
+An instance is reusable and safe for concurrent use: build it once, call
 `Parse` on it many times.
 
-## Step 7 — Extend the grammar (JSON-with-comments)
+## Step 7: Extend the grammar (JSON-with-comments)
 
 Here is the foundation idea in action. The `Json` plugin installs the JSON
 grammar onto a bare engine; `Make` lets you layer extra options. Turning
@@ -145,10 +145,10 @@ jsonc.Parse(`{"a":1} // a note`)   // map[string]any{"a": 1}
 jsonc.Parse(`{"a":/* inline */2}`) // map[string]any{"a": 2}
 ```
 
-The package-level `Parse` still rejects those comments — you extended a
+The package-level `Parse` still rejects those comments; you extended a
 *new instance*, not the global parser.
 
-## Step 8 — Use the command line
+## Step 8: Use the command line
 
 The module ships a tiny command, `tabnas-json`. It reads JSON from an
 argument or from stdin and prints the re-serialized, pretty-printed form:
@@ -170,7 +170,7 @@ Invalid input prints the error to stderr and exits with code 1.
 
 ## Where to go next
 
-- [`guide.md`](guide.md) — task-focused recipes.
-- [`reference.md`](reference.md) — the exact API and CLI surface.
-- [`concepts.md`](concepts.md) — how the grammar-plugin model works, plus
+- [`guide.md`](guide.md). Task-focused recipes.
+- [`reference.md`](reference.md). The exact API and CLI surface.
+- [`concepts.md`](concepts.md). How the grammar-plugin model works, plus
   the differences from the TypeScript version.

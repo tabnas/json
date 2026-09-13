@@ -1,6 +1,6 @@
 # Concepts: how `@tabnas/json` works and why
 
-Understanding-oriented. This explains the design — the engine
+Understanding-oriented. This explains the design: the engine
 relationship, the grammar-plugin model, the role of the `$`-builtin
 actions, and the trade-offs behind "strict". For hands-on material see
 [`tutorial.md`](tutorial.md) and [`guide.md`](guide.md); for the exact API
@@ -27,12 +27,12 @@ So `@tabnas/json` is two things bundled into the `json` plugin:
 
 ## Where the grammar comes from
 
-The rule set is not invented here — it is jsonic's **"Plain JSON"**
+The rule set is not invented here: it is jsonic's **"Plain JSON"**
 grammar. [`@tabnas/jsonic`](https://github.com/tabnas/jsonic) defines a
 pure-JSON core and then extends it for its relaxed format (comments,
 unquoted keys, trailing commas, implicit structures, single/backtick
 strings, path diving). This repository takes that pure core, installs it
-on its own, and clamps the lexer down to strict JSON — and stops there.
+on its own, and clamps the lexer down to strict JSON, and stops there.
 
 That lineage is the key to understanding the package: **`json` is the
 baseline that `jsonic` relaxes.** Same `val` / `map` / `list` / `pair` /
@@ -45,21 +45,21 @@ The grammar is five small rules. Each is a state machine with *open*
 alternates (entering the rule) and *close* alternates (leaving it). The
 start rule is `val`.
 
-- **`val`** — a value is a `map` (sees `{`), a `list` (sees `[`), or a
+- **`val`**. A value is a `map` (sees `{`), a `list` (sees `[`), or a
   plain scalar token (`#VAL`: a string, number, or keyword). On close it
   resolves to its built child or its scalar.
-- **`map`** — an object. Opens on `{`; either closes immediately (`{}`) or
+- **`map`**. An object. Opens on `{`; either closes immediately (`{}`) or
   matches `pair` rules; closes on `}`.
-- **`list`** — an array. Opens on `[`; either closes immediately (`[]`) or
+- **`list`**. An array. Opens on `[`; either closes immediately (`[]`) or
   matches `elem` rules; closes on `]`.
-- **`pair`** — one `"key": value` entry. Matches `#KEY #CL` (a key token
+- **`pair`**. One `"key": value` entry. Matches `#KEY #CL` (a key token
   then a colon), parses a `val`, and on a comma loops to the next pair.
-- **`elem`** — one list element. Parses a `val`, and on a comma loops to
+- **`elem`**. One list element. Parses a `val`, and on a comma loops to
   the next element.
 
 This is why the package is a *foundation*: any plugin that wants
 JSON-shaped structure can install these rules and add its own alternates
-(e.g. an alternate on `val` for a new literal form, or on `pair` for a new
+(for example an alternate on `val` for a new literal form, or on `pair` for a new
 key syntax).
 
 ## How the value tree is built: the `$`-builtin actions
@@ -84,8 +84,8 @@ real builder in at load time:
 These builders are **info-aware**. When the engine's `info.map` /
 `info.list` / `info.text` options are off (the default for strict JSON),
 they build plain objects, arrays, and primitive strings. When those
-options are on, the *same* builders attach the introspection markers —
-container `implicit` flags, string `quote` info — without any change to
+options are on, the *same* builders attach the introspection markers (
+container `implicit` flags, string `quote` info) without any change to
 the grammar. That is why `make({ info: { ... } })` works: you flip engine
 options and the shared builders do the extra bookkeeping. The grammar
 spec declares `v: 2`, the schema version of the builtins it binds to.
@@ -93,7 +93,7 @@ spec declares `v: 2`, the schema version of the builtins it binds to.
 ## What "strict" buys, and what it costs
 
 The whole point is parity with the platform parser. The engine's lexer is
-*lenient* by default — it will happily tokenize hex numbers, bare text,
+*lenient* by default: it will happily tokenize hex numbers, bare text,
 single quotes, and more. Strictness comes from a handful of options that
 close those doors:
 
@@ -110,7 +110,7 @@ close those doors:
 
 The trade-off is deliberate: this parser will **never** accept input that
 `JSON.parse` rejects, and never reject input it accepts. If you want
-leniency, you do not loosen `json` — you reach for `jsonic`, or you layer
+leniency, you do not loosen `json`; you reach for `jsonic`, or you layer
 your own options on top (the JSONC example in [`guide.md`](guide.md)).
 
 ## Why `null`-prototype objects
@@ -149,5 +149,5 @@ unavoidable runtime differences.
 pure `run` (source string in, exit code out, output via injected sinks)
 and a `main` that wires `run` to `process` (argv or stdin). Splitting it
 this way makes both halves testable in-process without spawning a
-subprocess — `run` is just a function. It parses, then re-serializes with
+subprocess: `run` is just a function. It parses, then re-serializes with
 `JSON.stringify(value, null, 2)`, so its output is itself canonical JSON.

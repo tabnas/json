@@ -11,13 +11,13 @@ To understand *how and why* it works, read [`concepts.md`](concepts.md).
 
 ## What you are building
 
-`@tabnas/json` is a standard JSON parser — it accepts exactly what
+`@tabnas/json` is a standard JSON parser: it accepts exactly what
 `JSON.parse` accepts (RFC 8259 / ECMA-404) and nothing more. By the end
 of this tutorial you will have used it to turn JSON text into JavaScript
 values, caught a parse error, and built a JSON-with-comments parser on
 top of it.
 
-## Step 1 — Install
+## Step 1: Install
 
 ```bash
 npm install @tabnas/json
@@ -28,7 +28,7 @@ installed automatically with npm 7+ on Node 24+. (During local
 development against unpublished engine builds, see the "Develop" section
 of [`../README.md`](../README.md).)
 
-## Step 2 — Parse a value
+## Step 2: Parse a value
 
 The whole library is reachable through one function: `parse`. Give it a
 JSON string, get back the JavaScript value.
@@ -45,7 +45,7 @@ parse('null')    // => null
 `parse` is also the default export, so in an ES module you can write
 `import parse from '@tabnas/json'`.
 
-## Step 3 — Parse objects and arrays
+## Step 3: Parse objects and arrays
 
 The same `parse` handles structured data. Objects become plain objects,
 arrays become arrays, and nesting works to any depth.
@@ -61,7 +61,7 @@ parse('{"a": {"b": [true, null]}}') // => { a: { b: [true, null] } }
 Insignificant whitespace (spaces, tabs, newlines) between tokens is
 ignored, exactly as in standard JSON.
 
-## Step 4 — See what gets rejected
+## Step 4: See what gets rejected
 
 This parser is *strict*. Anything `JSON.parse` would reject, it rejects
 too. Try a few inputs that look like JSON but are not:
@@ -69,7 +69,7 @@ too. Try a few inputs that look like JSON but are not:
 ```js
 const { parse } = require('@tabnas/json')
 
-// Each of these THROWS — they are not standard JSON:
+// Each of these THROWS, because they are not standard JSON:
 //   parse('{a:1}')    unquoted key
 //   parse('[1,2,]')   trailing comma
 //   parse("'x'")      single-quoted string
@@ -80,17 +80,17 @@ const { parse } = require('@tabnas/json')
 That strictness is the point: `@tabnas/json` is the baseline that every
 relaxed variant (like `@tabnas/jsonic`) extends.
 
-## Step 5 — Handle a parse error
+## Step 5: Handle a parse error
 
 Invalid input throws a `TabnasError`. Catch it and inspect the structured
-fields — `code`, `lineNumber`, `columnNumber`:
+fields: `code`, `lineNumber`, `columnNumber`:
 
 ```js
 const { parse, TabnasError } = require('@tabnas/json')
 
 let code
 try {
-  parse('{a:1}') // unquoted key — invalid
+  parse('{a:1}') // unquoted key, invalid
 } catch (err) {
   if (err instanceof TabnasError) {
     code = err.code // 'unexpected'
@@ -102,7 +102,7 @@ code // => "unexpected"
 `TabnasError` is also exported under the alias `JsonError` if you prefer
 that name. The `err.message` is a human-readable, source-pointing message.
 
-## Step 6 — Build your own parser instance
+## Step 6: Build your own parser instance
 
 `parse` uses one shared, lazily-built engine. When you want to customize
 the parser, build your own instance with `make`. Extra options are
@@ -115,9 +115,9 @@ const p = make()
 p.parse('[1,2]') // => [1, 2]
 ```
 
-An instance is reusable — build it once, call `parse` on it many times.
+An instance is reusable: build it once, call `parse` on it many times.
 
-## Step 7 — Extend the grammar (JSON-with-comments)
+## Step 7: Extend the grammar (JSON-with-comments)
 
 Here is the foundation idea in action. The `json` plugin installs the
 JSON grammar onto a bare `tabnas` engine; you can then layer on extra
@@ -134,10 +134,10 @@ jsonc.parse('{"a":1} // a note')   // => { a: 1 }
 jsonc.parse('{"a":/* inline */2}') // => { a: 2 }
 ```
 
-The base `parse` still rejects those comments — you extended a *copy*,
+The base `parse` still rejects those comments; you extended a *copy*,
 not the global parser.
 
-## Step 8 — Use the command line
+## Step 8: Use the command line
 
 The package ships a tiny CLI, `tabnas-json`. It reads JSON from an
 argument or from stdin and prints the re-serialized, pretty-printed form:
@@ -159,8 +159,8 @@ Invalid input prints the error to stderr and exits with code 1.
 
 ## Where to go next
 
-- [`guide.md`](guide.md) — task-focused recipes (error handling,
+- [`guide.md`](guide.md). Task-focused recipes (error handling,
   metadata, building other parsers).
-- [`reference.md`](reference.md) — the exact API and CLI surface.
-- [`concepts.md`](concepts.md) — how the grammar-plugin model works and
+- [`reference.md`](reference.md). The exact API and CLI surface.
+- [`concepts.md`](concepts.md). How the grammar-plugin model works and
   why this is the strict baseline.

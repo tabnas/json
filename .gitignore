@@ -146,3 +146,9 @@ vite.config.ts.timestamp-*
 # commit by test/fetch-jsontestsuite.sh. Third-party and never vendored —
 # it is not ours to redistribute.
 test/jsontestsuite/
+
+# Vale's downloaded style packages. The vocabulary under
+# .vale/styles/config/ and the house rule under .vale/styles/Tabnas/
+# are ours and ARE committed; Google/ arrives from the pinned URL
+# in .vale.ini via `vale sync`.
+/.vale/styles/Google/

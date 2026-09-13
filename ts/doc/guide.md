@@ -112,8 +112,8 @@ and still rejects comments.
 ## Install the grammar without the strict options
 
 `json` does two things: applies strict JSON lexer options *and* registers
-the rule set. When you want only the rules — to extend them under your own
-lexer configuration — call `registerJsonGrammar` directly:
+the rule set. When you want only the rules (to extend them under your own
+lexer configuration) call `registerJsonGrammar` directly:
 
 ```js
 const { Tabnas } = require('@tabnas/parser')
@@ -148,7 +148,7 @@ it composes cleanly in shell pipelines and `set -e` scripts.
 
 Parsed objects use a `null` prototype (`Object.create(null)`). A
 `"__proto__"` key therefore becomes a normal own property instead of
-mutating the prototype chain — there is no prototype-pollution gadget:
+mutating the prototype chain, so there is no prototype-pollution gadget:
 
 ```js
 const { parse } = require('@tabnas/json')

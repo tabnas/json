@@ -1,7 +1,7 @@
 # @tabnas/json
 
 A standard JSON parser (RFC 8259 / ECMA-404) for TypeScript and
-JavaScript — the standard-JSON **grammar plugin** for the
+JavaScript: the standard-JSON **grammar plugin** for the
 [`tabnas`](https://github.com/tabnas/parser) parsing engine.
 
 Available for [TypeScript/JavaScript](#install) and [Go](../go/).
@@ -36,10 +36,10 @@ parse('"hello"') // => "hello"
 
 Full [Diátaxis](https://diataxis.fr) docs:
 
-- [`doc/tutorial.md`](doc/tutorial.md) — learn it step by step.
-- [`doc/guide.md`](doc/guide.md) — task-focused recipes.
-- [`doc/reference.md`](doc/reference.md) — the exact API and CLI surface.
-- [`doc/concepts.md`](doc/concepts.md) — how it works and why.
+- [`doc/tutorial.md`](doc/tutorial.md). Learn it step by step.
+- [`doc/guide.md`](doc/guide.md). Task-focused recipes.
+- [`doc/reference.md`](doc/reference.md). The exact API and CLI surface.
+- [`doc/concepts.md`](doc/concepts.md). How it works and why.
 
 The Go port has the [equivalent docs](../go/doc/).
 
@@ -64,7 +64,7 @@ options, for plugins that want to build on the JSON rule set.
 
 `parse` reuses a single lazily-created instance, so you don't pay to
 rebuild the grammar on every call. To customize, build your own instance
-with `make(opts?)` — extra options (e.g. the `info` metadata options) are
+with `make(opts?)`; extra options (for example the `info` metadata options) are
 applied on top of the strict JSON config:
 
 ```ts
@@ -90,17 +90,16 @@ Exactly standard JSON:
 - `true`, `false`, `null`
 - insignificant whitespace: space, tab, line feed, carriage return
 
-It **rejects** everything outside that grammar — comments, trailing
+It **rejects** everything outside that grammar: comments, trailing
 commas, unquoted keys, single-quoted or backtick strings, multiline
 strings, implicit objects/arrays, hex/octal/binary numbers, leading
 zeros, a leading `+`, a bare `.5` or trailing `1.`, and empty input.
 This matches the platform `JSON.parse`.
 
 Parsed objects use a **null prototype** (`Object.create(null)`): this is
-deliberate and prototype-pollution-safe — a `"__proto__"` key becomes a
+deliberate and prototype-pollution-safe: a `"__proto__"` key becomes a
 normal own property rather than mutating the prototype. The only visible
-difference from `JSON.parse` is the missing `Object.prototype` (so e.g.
-`obj.hasOwnProperty` is `undefined`; use `Object.hasOwn(obj, k)`).
+difference from `JSON.parse` is the missing `Object.prototype` (so for example `obj.hasOwnProperty` is `undefined`; use `Object.hasOwn(obj, k)`).
 
 ## Extending the grammar
 
