@@ -20,7 +20,7 @@ Docs, guides, the error reference and the playground: **[tabnas.dev](https://tab
 This package implements exactly the JSON grammar defined by
 [RFC 8259](https://www.rfc-editor.org/rfc/rfc8259) / ECMA-404 and nothing
 more: objects, arrays, strings, numbers, and the literals `true`, `false`
-and `null`. It rejects everything an extended grammar would relax —
+and `null`. It rejects everything an extended grammar would relax:
 comments, trailing commas, unquoted keys, single-quoted and multiline
 strings, implicit objects and arrays, hex/octal numbers, leading zeros.
 If `JSON.parse` (TS/JS) or `encoding/json` (Go) would reject the input,
@@ -30,7 +30,7 @@ That claim is verified against
 [nst/JSONTestSuite](https://github.com/nst/JSONTestSuite), the standard
 cross-implementation JSON parsing suite: **95/95 must-accept, 188/188
 must-reject, and all 35 implementation-defined cases matching the platform
-parser, in both runtimes**. The suite is not vendored — fetch it with
+parser, in both runtimes**. The suite is not vendored; fetch it with
 `make json-test-suite` and the conformance tests in
 `ts/test/conformance.test.js` / `go/conformance_test.go` run as part of
 the normal test suite.
@@ -41,7 +41,7 @@ The [`tabnas`](https://github.com/tabnas/parser) engine ships **no
 grammar**; every grammar is a plugin. This package supplies the
 standard-JSON grammar plugin for both runtimes. The rule set
 (`val` / `map` / `list` / `pair` / `elem`) is the **"Plain JSON"** grammar
-from [`jsonic`](https://github.com/tabnas/jsonic) — the pure-JSON core
+from [`jsonic`](https://github.com/tabnas/jsonic), the pure-JSON core
 jsonic defines before extending it for the relaxed jsonic format. Here
 that core is installed on its own, with the lexer restricted to strict
 JSON.
@@ -63,7 +63,7 @@ then layer additional rules on the shared `val` / `map` / `list` /
 | **TypeScript / JavaScript** (`@tabnas/json`) | [`ts/README.md`](ts/README.md) |
 | **Go** (`github.com/tabnas/json/go`) | [`go/README.md`](go/README.md) |
 
-Both runtimes are grammar plugins on the `tabnas` engine — the TypeScript
+Both runtimes are grammar plugins on the `tabnas` engine: the TypeScript
 package on the `@tabnas/parser` npm package, the Go module on
 `github.com/tabnas/parser/go`. TypeScript is canonical: both suites run
 the shared conformance fixtures in [`test/spec/`](test/spec/).
@@ -121,7 +121,7 @@ git clone https://github.com/tabnas/parser     # sibling of this repo
 git clone https://github.com/tabnas/json
 ```
 
-Then build the engine first and run each runtime's tests — see
+Then build the engine first and run each runtime's tests; see
 [`AGENTS.md`](AGENTS.md) and the per-runtime READMEs. CI does this
 automatically (`.github/workflows/build.yml`).
 

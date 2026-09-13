@@ -59,7 +59,7 @@ parity contract shared with the TypeScript version.
 ## Reuse a parser efficiently
 
 The top-level `Parse` already reuses a single lazily-built engine, so
-repeated calls do not rebuild the grammar — and it is safe for concurrent
+repeated calls do not rebuild the grammar, and it is safe for concurrent
 use because each parse builds its own context. When you need a
 *configured* parser, build one with `Make` and keep it around:
 
@@ -74,7 +74,7 @@ b, _ := p.Parse(`{"y":2}`) // map[string]any{"y": 2}
 By default the parser produces plain values. To know whether a container
 was explicit or to capture a string's quote character, enable the engine's
 `Info` options through `Make`. The parsed values then come back wrapped in
-the engine's info carriers — `MapRef`, `ListRef`, and `Text`:
+the engine's info carriers: `MapRef`, `ListRef`, and `Text`:
 
 ```go
 import (
@@ -119,8 +119,8 @@ comments.
 ## Install the grammar without the strict options
 
 `Json` does two things: applies strict JSON lexer options *and* registers
-the rule set. When you want only the rules — to extend them under your own
-lexer configuration — call `RegisterJSONGrammar` directly on a bare
+the rule set. When you want only the rules (to extend them under your own
+lexer configuration) call `RegisterJSONGrammar` directly on a bare
 engine:
 
 ```go
@@ -163,6 +163,6 @@ it composes cleanly in shell pipelines.
 
 Like `encoding/json`, every JSON number parses to a `float64`, integers
 included (`1` becomes `float64(1)`). And because Go maps are unordered, the
-key order of a parsed object is not preserved — if you need order, use the
+key order of a parsed object is not preserved; if you need order, use the
 `Info` options and walk the structure, or parse with the metadata carriers
 above.

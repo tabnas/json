@@ -1,6 +1,6 @@
 # Concepts: how `tabnasjson` works and why (Go)
 
-Understanding-oriented. This explains the design — the engine
+Understanding-oriented. This explains the design: the engine
 relationship, the grammar-plugin model, the role of the `$`-builtin
 actions, the strictness trade-offs, and how the Go port differs from the
 canonical TypeScript one. For hands-on material see
@@ -29,12 +29,12 @@ So `tabnasjson` is two things bundled into the `Json` plugin:
 
 ## Where the grammar comes from
 
-The rule set is not invented here — it is jsonic's **"Plain JSON"**
+The rule set is not invented here: it is jsonic's **"Plain JSON"**
 grammar. `jsonic` defines a pure-JSON core and then extends it for its
 relaxed format (comments, unquoted keys, trailing commas, implicit
 structures, single/backtick strings, path diving). This module takes that
 pure core, installs it on its own, and clamps the lexer down to strict
-JSON — and stops there.
+JSON, and stops there.
 
 That lineage is the key: **`tabnasjson` is the baseline that jsonic
 relaxes.** Same `val` / `map` / `list` / `pair` / `elem` rules; jsonic
@@ -47,16 +47,16 @@ The grammar is five small rules, each a state machine with *open*
 alternates (entering the rule) and *close* alternates (leaving it). The
 start rule is `val`.
 
-- **`val`** — a value is a `map` (sees `{`), a `list` (sees `[`), or a
+- **`val`**. A value is a `map` (sees `{`), a `list` (sees `[`), or a
   plain scalar token (`#VAL`). On close it resolves to its built child or
   its scalar.
-- **`map`** — an object. Opens on `{`; closes immediately (`{}`) or matches
+- **`map`**. An object. Opens on `{`; closes immediately (`{}`) or matches
   `pair` rules; closes on `}`.
-- **`list`** — an array. Opens on `[`; closes immediately (`[]`) or matches
+- **`list`**. An array. Opens on `[`; closes immediately (`[]`) or matches
   `elem` rules; closes on `]`.
-- **`pair`** — one `"key": value` entry. Matches `#KEY #CL`, parses a
+- **`pair`**. One `"key": value` entry. Matches `#KEY #CL`, parses a
   `val`, loops on a comma.
-- **`elem`** — one list element. Parses a `val`, loops on a comma.
+- **`elem`**. One list element. Parses a `val`, loops on a comma.
 
 This is why the module is a *foundation*: any plugin that wants
 JSON-shaped structure can install these rules with `RegisterJSONGrammar`
@@ -83,13 +83,13 @@ These builders are **info-aware**. With `Info.Map` / `Info.List` /
 `Info.Text` off (the strict-JSON default), they build plain
 `map[string]any`, `[]any`, and primitive values. With them on, the *same*
 builders allocate the engine's `MapRef` / `ListRef` / `Text` carriers and
-record the container/quote metadata — no grammar change. The grammar spec
+record the container and quote metadata, with no grammar change. The grammar spec
 declares `V: 2`, the schema version of the builtins it binds to.
 
 ## What "strict" buys, and what it costs
 
 The whole point is parity with `encoding/json`. The engine's lexer is
-*lenient* by default — it will tokenize hex numbers, bare text, single
+*lenient* by default: it will tokenize hex numbers, bare text, single
 quotes. Strictness comes from a handful of options:
 
 - `Number.Exclude` is a predicate that rejects any number token not
@@ -111,7 +111,7 @@ reach for jsonic or layer your own options on top (the JSONC example in
 ## TypeScript is canonical; Go tracks it
 
 The TS implementation in `ts/src/json.ts` is the source of truth; this Go
-port in `go/json.go` mirrors it line-for-line where it can — both use the
+port in `go/json.go` mirrors it line-for-line where it can: both use the
 engine's declarative grammar spec, so the two grammars read almost
 identically. Both suites run the same conformance fixtures in
 `test/spec/*.tsv` (`valid.tsv` = input → expected output,
@@ -131,7 +131,7 @@ realities differ:
   TS error exposes `lineNumber` / `columnNumber`. The `Code` values are
   identical (`unexpected`, `unterminated_string`, `invalid_unicode`).
 - **Value types.** Go returns `map[string]any`, `[]any`, `float64`,
-  `string`, `bool`, `nil` — the `encoding/json` set. TS returns plain
+  `string`, `bool`, `nil`, the `encoding/json` set. TS returns plain
   objects (with a **`null` prototype**), arrays, `number`, `string`,
   `boolean`, `null`. Go has no prototype, so there is no
   prototype-pollution concern and no `null`-prototype caveat; key order is
@@ -168,4 +168,4 @@ code out, output via injected sink funcs) and a `runMain` that wires it to
 args or stdin. Splitting it this way makes both halves testable in-process
 without spawning a subprocess. It parses, then re-serializes with
 `json.MarshalIndent(value, "", "  ")`, so its output is itself canonical
-JSON — the same layout as the TS CLI's `JSON.stringify(value, null, 2)`.
+JSON, the same layout as the TS CLI's `JSON.stringify(value, null, 2)`.

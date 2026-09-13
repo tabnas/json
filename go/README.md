@@ -1,6 +1,6 @@
 # json (Go)
 
-A standard JSON parser (RFC 8259 / ECMA-404) for Go — the standard-JSON
+A standard JSON parser (RFC 8259 / ECMA-404) for Go: the standard-JSON
 **grammar plugin** for the [`tabnas`](https://github.com/tabnas/parser)
 parsing engine (`github.com/tabnas/parser/go`).
 
@@ -16,7 +16,7 @@ go get github.com/tabnas/json/go
 
 The module depends on `github.com/tabnas/parser/go`; until that is
 published it is resolved via a `replace` directive to a sibling checkout
-— see [Develop](#develop).
+See [Develop](#develop).
 
 ## Quick example
 
@@ -45,10 +45,10 @@ func main() {
 
 Full [Diátaxis](https://diataxis.fr) docs:
 
-- [`doc/tutorial.md`](doc/tutorial.md) — learn it step by step.
-- [`doc/guide.md`](doc/guide.md) — task-focused recipes.
-- [`doc/reference.md`](doc/reference.md) — the exact API and CLI surface.
-- [`doc/concepts.md`](doc/concepts.md) — how it works, including the
+- [`doc/tutorial.md`](doc/tutorial.md). Learn it step by step.
+- [`doc/guide.md`](doc/guide.md). Task-focused recipes.
+- [`doc/reference.md`](doc/reference.md). The exact API and CLI surface.
+- [`doc/concepts.md`](doc/concepts.md). How it works, including the
   differences from the TypeScript version.
 
 TypeScript is canonical; its docs are in [`../ts/doc/`](../ts/doc/).
@@ -87,12 +87,12 @@ p.Parse(`{"a":[1,2]}`)
 
 ## What it accepts
 
-Exactly standard JSON — objects with double-quoted string keys, arrays,
+Exactly standard JSON: objects with double-quoted string keys, arrays,
 double-quoted strings (with `\" \\ \/ \b \f \n \r \t \uXXXX` and surrogate
 pairs), numbers, `true`, `false`, `null`, and insignificant whitespace.
 It rejects everything outside that grammar (comments, trailing commas,
 unquoted keys, single quotes, implicit structures, hex numbers, leading
-zeros, `.5`, `1.`, `+1`, empty input) — the same surface as
+zeros, `.5`, `1.`, `+1`, empty input), the same surface as
 `encoding/json`.
 
 ## Extending the grammar

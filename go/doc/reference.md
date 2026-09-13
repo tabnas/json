@@ -62,7 +62,7 @@ tr := true
 p := tabnasjson.Make(tabnas.Options{Info: &tabnas.InfoOptions{Map: &tr, List: &tr}})
 ```
 
-(`Make` panics only if the fixed grammar spec is invalid — a programmer
+(`Make` panics only if the fixed grammar spec is invalid, a programmer
 error while editing the grammar, not reachable at runtime.)
 
 ### `func Json(j *tabnas.Tabnas, _ map[string]any) error`
@@ -91,7 +91,7 @@ grammar-local closures.
 ### `const VERSION string`
 
 The module version string. It always equals the TS package's
-`ts/package.json` `"version"` — `TestVersionMatchesPackageJSON` fails the
+`ts/package.json` `"version"`; `TestVersionMatchesPackageJSON` fails the
 build if the two ever drift.
 
 ## Error type: `*tabnas.TabnasError`
@@ -114,7 +114,7 @@ type assertion. Relevant exported fields:
 
 | Code | When |
 |---|---|
-| `unexpected` | Any character/token no active rule alternative accepts — the catch-all (unquoted keys, trailing commas, comments, single quotes, bad numbers like `01`/`+1`/`.5`/`1.`, unknown escapes, empty input, trailing junk). |
+| `unexpected` | Any character/token no active rule alternative accepts; the catch-all (unquoted keys, trailing commas, comments, single quotes, bad numbers like `01`/`+1`/`.5`/`1.`, unknown escapes, empty input, trailing junk). |
 | `unterminated_string` | A string literal with no closing quote (`"abc`). |
 | `invalid_unicode` | A `\u` escape that is not four hex digits (`\uZ`, `\u{41}`). |
 
@@ -150,8 +150,8 @@ objects/arrays, hex/octal/binary numbers, leading zeros, leading `+`, bare
 
 ## Strict options (internal)
 
-`jsonOptions()` tightens the engine defaults to JSON-only. The
-load-bearing settings (mirroring the TS `JSON_OPTIONS`):
+`jsonOptions()` tightens the engine defaults to JSON-only. The settings
+that do the tightening (mirroring the TS `JSON_OPTIONS`):
 
 | Option | Value | Effect |
 |---|---|---|
@@ -172,7 +172,7 @@ load-bearing settings (mirroring the TS `JSON_OPTIONS`):
 | `TokenSet["KEY"]` | `[]string{"#ST"}` | Keys must be quoted strings. |
 
 `strictNumber` is `^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$`.
-`tabnas.Undefined` is the engine's "no value" sentinel — distinct from
+`tabnas.Undefined` is the engine's "no value" sentinel, distinct from
 `nil`, since JSON `null` parses to `nil` and must stay valid.
 
 ## Grammar rules

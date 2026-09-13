@@ -54,7 +54,7 @@ The `null` prototype is deliberate and prototype-pollution-safe: a
 
 Creates a fresh engine instance with the `json` plugin installed. If
 `opts` is given, it is applied with `tn.options(opts)` **after** the
-grammar exists, so engine options (e.g. `info`) layer on top of the strict
+grammar exists, so engine options (for example `info`) layer on top of the strict
 JSON configuration without clobbering it. Returns a reusable `Tabnas`
 instance; call `.parse(src)` on it.
 
@@ -86,7 +86,7 @@ grammar-local closures.
 
 ### `VERSION: string`
 
-The package version string. It always equals `package.json` `"version"` —
+The package version string. It always equals `package.json` `"version"`;
 `test/version.test.js` fails the build if the two ever drift.
 
 ### `Tabnas` (re-export)
@@ -119,7 +119,7 @@ the Go port):
 
 | Code | When |
 |---|---|
-| `unexpected` | Any character/token that no active rule alternative accepts — the catch-all for malformed JSON (unquoted keys, trailing commas, comments, single quotes, bad numbers like `01`/`+1`/`.5`/`1.`, unknown escapes, empty input, trailing junk). |
+| `unexpected` | Any character/token that no active rule alternative accepts; the catch-all for malformed JSON (unquoted keys, trailing commas, comments, single quotes, bad numbers like `01`/`+1`/`.5`/`1.`, unknown escapes, empty input, trailing junk). |
 | `unterminated_string` | A string literal with no closing quote (`"abc`). |
 | `invalid_unicode` | A `\u` escape that is not four hex digits (`\uZ`, `\u{41}`). |
 
@@ -153,7 +153,7 @@ Everything outside that grammar, matching `JSON.parse`:
 ## Strict options (internal)
 
 The `json` plugin applies a fixed options object that tightens the
-engine's defaults to JSON-only. The load-bearing settings:
+engine's defaults to JSON-only. The settings that do the tightening:
 
 | Option | Value | Effect |
 |---|---|---|
@@ -174,7 +174,7 @@ engine's defaults to JSON-only. The load-bearing settings:
 | `result.fail` | `[undefined, NaN]` | Treat "no value" as a parse failure. |
 | `tokenSet.KEY` | `['#ST', null, null, null]` | Keys must be quoted strings. |
 
-These are not part of the public API surface — they are documented so you
+These are not part of the public API surface; they are documented so you
 know precisely what `json` configures. Extra options passed to `make` are
 applied after these.
 
