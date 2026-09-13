@@ -112,7 +112,7 @@ The `Error()` string is a human-readable, source-pointing message.
 
 ## Step 6: Build your own parser instance
 
-`Parse` uses one shared, lazily-built engine. When you want to customize
+`Parse` uses one shared, lazily built engine. When you want to customize
 the parser, build your own instance with `Make`:
 
 ```go

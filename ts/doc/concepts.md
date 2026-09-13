@@ -125,7 +125,7 @@ behavior on purpose.
 
 ## Why a shared default instance
 
-`parse` keeps one lazily-built engine in a module-level variable and
+`parse` keeps one lazily built engine in a module-level variable and
 reuses it. Building an engine compiles the grammar, which is not free; a
 parse, by contrast, creates a fresh per-call context and only reads
 instance state. So the instance is safe to share and reusing it avoids

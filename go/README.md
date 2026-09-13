@@ -75,7 +75,7 @@ to build on the JSON rule set.
 
 ## Reuse and options
 
-`Parse` reuses a single lazily-created instance (safe for concurrent use,
+`Parse` reuses a single lazily created instance (safe for concurrent use,
 since each parse builds its own context), so you don't rebuild the grammar
 on every call. To customize, build your own instance with `Make(extra ...Options)`:
 

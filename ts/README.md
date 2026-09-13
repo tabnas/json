@@ -62,7 +62,7 @@ options, for plugins that want to build on the JSON rule set.
 
 ## Reuse and options
 
-`parse` reuses a single lazily-created instance, so you don't pay to
+`parse` reuses a single lazily created instance, so you don't pay to
 rebuild the grammar on every call. To customize, build your own instance
 with `make(opts?)`; extra options (for example the `info` metadata options) are
 applied on top of the strict JSON config:

@@ -28,7 +28,7 @@ import (
 
 ### `func Parse(src string) (any, error)`
 
-Parses `src` as standard JSON using a single, lazily-created default
+Parses `src` as standard JSON using a single, lazily created default
 engine (created once via `sync.Once`; safe for concurrent use because each
 parse builds its own context and only reads instance state). Returns the
 parsed value, or a `*tabnas.TabnasError` on invalid input.

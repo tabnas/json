@@ -25,7 +25,7 @@ for design see [`concepts.md`](concepts.md).
 
 ### `parse(src: string): any`
 
-Parses `src` as standard JSON using a single, lazily-created default
+Parses `src` as standard JSON using a single, lazily created default
 engine (shared across calls; building a fresh context per call makes reuse
 safe). Returns the parsed value. Throws `TabnasError` on invalid input.
 

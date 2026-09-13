@@ -139,7 +139,7 @@ realities differ:
   order.
 - **Numbers are always `float64`.** Integers included (`1` → `float64(1)`),
   matching `encoding/json`. TS uses JavaScript's single `number` type.
-- **Options shape.** Go configuration is the strongly-typed
+- **Options shape.** Go configuration is the strongly typed
   `tabnas.Options` struct with `*bool` pointer fields (hence the
   `tr := true; &tr` idiom); TS uses a plain nested options object. `Make`
   takes `extra ...tabnas.Options` (variadic) where TS `make` takes one
@@ -152,7 +152,7 @@ realities differ:
   meaningful sentinel is `tabnas.Undefined` ("no value"), kept distinct
   from `nil` so JSON `null` stays valid.
 - **Default-instance mechanism.** Go uses `sync.Once` to build the shared
-  default parser; TS uses a lazily-assigned module variable
+  default parser; TS uses a lazily assigned module variable
   (`??=`). Both reuse one engine and build a fresh context per parse, so
   both are safe to reuse.
 - **The optional debug composition test** lives in a *separate* Go module
