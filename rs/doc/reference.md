@@ -107,6 +107,7 @@ formatted, source-pointing message.
 |---|---|
 | `unexpected` | Any character or token no active rule alternative accepts; the catch-all (unquoted keys, trailing commas, comments, single quotes, bad numbers such as `01`, `+1`, `.5` and `1.`, unknown escapes, empty input, trailing junk). |
 | `unterminated_string` | A string literal with no closing quote (`"abc`). |
+| `cancel` | Nesting past the depth limit below. Rust only: neither other runtime limits depth, so no shared fixture pins this code. |
 | `invalid_unicode` | A `\u` escape that is not four hex digits (`\uZ`, `\u{41}`). |
 
 ### `pub const VERSION: &str`
@@ -138,10 +139,32 @@ pairs), numbers (optional `-`, no-leading-zero integer, optional
 fraction, optional `e` or `E` exponent), `true`, `false`, `null`, and
 insignificant whitespace.
 
-One exception, shared with the Go port and not with TypeScript: a number
-whose exponent puts it outside `f64` range, such as `1e999`, is rejected
-rather than saturated to infinity. Underflow to zero, as in `1e-999`, is
-accepted. See [`concepts.md`](concepts.md).
+Two exceptions, both following this runtime's platform parser rather than
+TypeScript's. A number whose exponent puts it outside `f64` range, such
+as `1e999`, is rejected rather than saturated to infinity; underflow to
+zero, as in `1e-999`, is accepted. And nesting is limited to 127 levels.
+See [`concepts.md`](concepts.md) for why parity is measured per runtime.
+
+## The depth limit
+
+`serde_json` accepts 127 levels of nested objects and arrays and refuses
+one level deeper with "recursion limit exceeded". This crate does the
+same, so `parse` answers a `cancel` error rather than a value:
+
+```rust
+let deep = "[".repeat(200) + &"]".repeat(200);
+assert!(tabnas_json::parse(&deep).is_err());
+```
+
+The limit is not only about matching the platform. Without it, a
+kilobyte of open brackets ends the **process** with a stack overflow
+instead of returning an error, which no amount of care at the call site
+can defend against. A parser reached with untrusted input has to answer,
+not abort.
+
+The boundary is measured against `serde_json` in the test suite rather
+than copied from its source, so a future change there shows up as a
+failure rather than as silent drift.
 
 ## What is rejected
 
@@ -257,7 +280,9 @@ that had not been bound. Install `json` and relax what you need with
 | File | What it holds |
 |---|---|
 | `rs/tests/parity_test.rs` | The shared `test/spec/*.tsv` fixtures, with `serde_json` as a second opinion on every valid row. |
-| `rs/tests/json_test.rs` | Behaviour the fixtures do not pin, including the out-of-range exponent asymmetry and the shared default parser under concurrent callers. |
+| `rs/tests/conformance_test.rs` | The pinned nst/JSONTestSuite corpus (318 cases), graded against `serde_json`, with the named divergence register. |
+| `rs/tests/json_test.rs` | Behaviour the fixtures do not pin, including the two platform asymmetries and the shared default parser under concurrent callers. |
+| `rs/tests/common/oracle.rs` | The one value comparator both graders use. |
 | `rs/tests/version_test.rs` | `VERSION`, `Cargo.toml` and `ts/package.json` agree. |
 | `rs/tests/common/spec.rs` | The fixture loader, matched to the `@tabnas/support` escape codec. |
 

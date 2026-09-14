@@ -27,7 +27,7 @@ use std::sync::OnceLock;
 
 use regex::Regex;
 use serde_json::json;
-use tabnas::{GrammarError, GrammarSpec, LexCheckResult, Tabnas, Value};
+use tabnas::{Context, GrammarError, GrammarSpec, LexCheckResult, Tabnas, Value};
 
 /// This crate's version. It MUST equal `ts/package.json` "version": the
 /// release orchestrator rewrites both, and `tests/version_test.rs` fails
@@ -114,6 +114,58 @@ fn strict_number_check(src: &str) -> LexCheckResult {
         Ok(_) => LexCheckResult::Continue,
         Err(_) => LexCheckResult::Skip,
     }
+}
+
+/// serde_json's own nesting limit, and therefore this port's.
+///
+/// `serde_json::from_str` accepts 127 levels of nesting and refuses the
+/// 128th with "recursion limit exceeded"; `JSON.parse` and
+/// `encoding/json` both go far deeper. That is the same shape of
+/// platform disagreement as the out-of-range exponent above, and
+/// per-runtime parity answers it the same way: this port follows its own
+/// platform. The boundary was measured against serde_json rather than
+/// read off its constant, and `tests/json_test.rs` re-measures it, so a
+/// future change there shows up as a failure instead of as silent drift.
+///
+/// Unlike that one, it is also a crash fix. Without a limit, a 1 KB
+/// source of 500 open brackets aborts the process with a stack overflow
+/// rather than returning an error, which the external conformance corpus
+/// exercises directly (`i_structure_500_nested_arrays`,
+/// `n_structure_100000_opening_arrays`). A parser reached with untrusted
+/// input must not be able to end the process.
+const DEPTH_LIMIT: usize = 127;
+
+/// How many open containers this parse is inside.
+///
+/// Unlike the number check, the budget needs no name: `parse_budget`
+/// takes the closure directly, so there is nothing to bind by name and
+/// nothing for the grammar document to reference.
+///
+/// Counted from the RULE NAMES rather than from `rule_stack.len()`. The
+/// stack holds about three rules per level (`val`, then `map`/`list`,
+/// then `pair`/`elem`), so a length-based limit would encode that ratio
+/// and shift silently the first time the grammar gains an alternate.
+/// Counting the container rules is the depth a reader of the document
+/// would count.
+fn depth(context: &Context) -> usize {
+    context
+        .rule_stack
+        .iter()
+        .filter(|rule| rule.name == "map" || rule.name == "list")
+        .count()
+}
+
+/// The parse budget: stop before the nesting outruns the stack.
+///
+/// Strictly less than, not at most. The check runs at the top of a parse
+/// iteration, BEFORE the rule for the token about to be read is pushed,
+/// so the count it sees is the depth already entered and the container
+/// being opened would make it one deeper. `<` is therefore what makes
+/// `DEPTH_LIMIT` mean "this many levels parse, the next one does not",
+/// which is the boundary `tests/json_test.rs` measures against
+/// serde_json rather than asserting from this reasoning.
+fn within_depth_limit(context: &Context) -> bool {
+    depth(context) < DEPTH_LIMIT
 }
 
 /// The one serialized document carrying both the strict-JSON options and
@@ -245,6 +297,15 @@ pub fn json(parser: &mut Tabnas) -> Result<(), GrammarError> {
     parser.lex_check_ref(NUMBER_CHECK, strict_number_check);
     let spec = GrammarSpec::from_value(json_document())?;
     parser.grammar(&spec)?;
+    // AFTER the grammar, not before: `grammar` applies the document's
+    // options, and an options pass that does not mention `parse.budget`
+    // is not required to preserve one set earlier. Setting it here is
+    // also the same ordering rule `make` documents for caller options.
+    //
+    // Every iteration, because the check is what stands between a deeply
+    // nested source and a stack overflow; a sampled check would let the
+    // parse run past the limit by however many levels the sample missed.
+    parser.parse_budget(1, within_depth_limit);
     Ok(())
 }
 

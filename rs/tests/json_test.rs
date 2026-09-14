@@ -135,3 +135,41 @@ fn the_shared_default_parser_takes_concurrent_callers() {
         thread.join().expect("no thread panicked");
     }
 }
+
+#[test]
+fn rejects_nesting_deeper_than_its_platform_oracle() {
+    // serde_json accepts 127 levels and refuses the 128th; `JSON.parse`
+    // and `encoding/json` both go far deeper. Per-runtime parity answers that the same way it
+    // answers the out-of-range exponent above: follow this platform.
+    //
+    // Asserted against the oracle, not against a remembered number, so the
+    // day serde_json moves its limit this test says so instead of quietly
+    // encoding the old one.
+    let nest = |n: usize| format!("{}{}", "[".repeat(n), "]".repeat(n));
+
+    for depth in [1usize, 2, 64, 127] {
+        let src = nest(depth);
+        assert!(parse(&src).is_ok(), "depth {depth} must parse");
+        assert!(
+            serde_json::from_str::<serde_json::Value>(&src).is_ok(),
+            "depth {depth}: serde_json must accept it too"
+        );
+    }
+
+    for depth in [128usize, 129, 500, 5_000] {
+        let src = nest(depth);
+        assert!(parse(&src).is_err(), "depth {depth} must be rejected");
+        assert!(
+            serde_json::from_str::<serde_json::Value>(&src).is_err(),
+            "depth {depth}: serde_json must reject it too"
+        );
+    }
+
+    // The point of the limit. Without it this input aborts the process
+    // with a stack overflow rather than returning an error, which no
+    // amount of caller care can defend against.
+    assert!(
+        parse(&nest(100_000)).is_err(),
+        "a deep source must not crash"
+    );
+}

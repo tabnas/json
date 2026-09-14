@@ -92,6 +92,12 @@ tabnas_json::parse("01");      // leading zero
 tabnas_json::parse("1 // hi"); // comment
 ```
 
+Two more are rejected because `serde_json` rejects them, even though
+`JSON.parse` accepts both: a number whose exponent is out of `f64` range,
+such as `1e999`, and nesting deeper than 127 levels. The second also
+keeps a deeply nested document from ending the process rather than
+returning an error.
+
 That strictness is the reason the crate exists: `tabnas_json` is the
 baseline that relaxed variants extend.
 
@@ -163,8 +169,10 @@ cd rs && cargo test --all-targets
 
 That runs the shared conformance fixtures in `test/spec/*.tsv`, the same
 files the TypeScript and Go suites run, and cross-checks every valid row
-against `serde_json`. For what CI would say, including formatting, the
-lockfile check and clippy, run `ci/rust/run.sh` from the repository root.
+against `serde_json`. It also grades the external nst/JSONTestSuite
+corpus, downloading it at a pinned commit the first time. For what CI
+would say, including formatting, the lockfile check and clippy, run
+`ci/rust/run.sh` from the repository root.
 
 ## Where to go next
 

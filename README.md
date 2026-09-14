@@ -28,14 +28,15 @@ would reject the input, so does this parser.
 
 That claim is verified against
 [nst/JSONTestSuite](https://github.com/nst/JSONTestSuite), the standard
-cross-implementation JSON parsing suite: **95/95 must-accept, 188/188
-must-reject, and all 35 implementation-defined cases matching the platform
-parser, in the TypeScript and Go runtimes**. The suite is not vendored;
-fetch it with `make json-test-suite` and the conformance tests in
-`ts/test/conformance.test.js` / `go/conformance_test.go` run as part of
-the normal test suite. The Rust port runs the shared fixtures in
-[`test/spec/`](test/spec/) with `serde_json` as a second opinion on every
-valid row.
+cross-implementation JSON parsing suite: **95/95 must-accept and 188/188
+must-reject in all three runtimes**, every one of the 283 cases RFC 8259
+makes mandatory. On the 35 implementation-defined cases, where the RFC
+leaves the choice open, TypeScript and Go match their platform parser on
+all 35 and Rust on 24, with the other 11 named individually in the test
+that grades them. The suite is not vendored; fetch it with
+`make json-test-suite`, and the conformance tests in
+`ts/test/conformance.test.js`, `go/conformance_test.go` and
+`rs/tests/conformance_test.rs` run as part of the normal test suite.
 
 ## How it works
 

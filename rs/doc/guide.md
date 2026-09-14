@@ -181,8 +181,14 @@ Every JSON number parses to an `f64`, integers included, so `1` becomes
 matches the TypeScript port, whose objects keep insertion order, and
 differs from the Go port, where a `map[string]any` is unordered.
 
-One number case differs from TypeScript on purpose. An exponent out of
-`f64` range, such as `1e999`, is syntactically valid JSON that
-`serde_json` rejects and `JSON.parse` saturates to infinity. This port
-follows its own platform and rejects it. See
-[`concepts.md`](concepts.md) for why parity is measured per runtime.
+Two cases differ from TypeScript on purpose, both because this port
+follows its own platform parser. An exponent out of `f64` range, such as
+`1e999`, is syntactically valid JSON that `serde_json` rejects and
+`JSON.parse` saturates to infinity, so this port rejects it. And nesting
+is limited to 127 levels, which is where `serde_json` stops; past that
+`parse` answers a `cancel` error. See [`concepts.md`](concepts.md) for
+why parity is measured per runtime.
+
+If you are parsing input you did not write, that second limit is the one
+that matters: without it a kilobyte of open brackets would end the
+process rather than return an error.

@@ -63,7 +63,7 @@ tabnas-json = { path = "../json/rs" }
 
 ## Differences from the canonical TypeScript
 
-Two, both deliberate:
+Three, all deliberate:
 
 - **Out-of-range exponents are rejected.** `1e999` is syntactically valid
   JSON, and the platform parsers disagree about it: `JSON.parse`
@@ -71,6 +71,12 @@ Two, both deliberate:
   error. This package is held to per-runtime parity, so Rust rejects with
   Go rather than accepting with TypeScript. Underflow (`1e-999` to `0`)
   is accepted, as it is in Go.
+- **Nesting past 127 levels is rejected.** `serde_json` accepts 127 and
+  refuses one level deeper, while `JSON.parse` and `encoding/json` both
+  go much further, so this port follows its own platform again. It is also what
+  keeps a deeply nested source from ending the process: without the
+  limit, a kilobyte of open brackets overflows the stack instead of
+  returning an error.
 - **Strictness is a `check` hook, not `number.exclude`.** The TypeScript
   exclude is a negative lookahead, and the `regex` crate has no
   lookaround, so the positive pattern plus an inversion is the only way
@@ -92,6 +98,16 @@ The suite runs the shared `../test/spec/*.tsv` conformance fixtures, the
 same files the TypeScript and Go suites run, and additionally
 cross-checks every valid row against `serde_json`, this runtime's
 platform oracle, the way the Go runner checks against `encoding/json`.
+
+It also grades the external
+[nst/JSONTestSuite](https://github.com/nst/JSONTestSuite) corpus at a
+pinned commit, fetching it on first use. Every one of the 283 cases
+RFC 8259 makes mandatory passes. Eleven of the 35 implementation-defined
+cases differ from `serde_json`, each named with its reason in the test;
+ten are lone surrogates in a `\u` escape, which this parser turns into
+U+FFFD rather than rejecting, and one is a 48-digit integer where
+`serde_json` is a unit in the last place away from what the Rust standard
+library returns.
 
 ## License
 

@@ -144,27 +144,72 @@ Each port is held to **its own platform**, not to TypeScript's. That is
 what a JSON parser is for: a caller reaching for this crate wants what
 `serde_json` would have given them.
 
-Almost always the platforms agree and the distinction is invisible. One
-input makes it visible. `1e999` is syntactically valid JSON, and the
-three platform parsers disagree about it:
+Almost always the platforms agree and the distinction is invisible. Two
+inputs make it visible.
 
-| Platform | `1e999` | `1e-999` |
-|---|---|---|
-| `JSON.parse` | infinity | `0` |
-| `encoding/json` | error | `0` |
-| `serde_json` | error | `0` |
+`1e999` is syntactically valid JSON, and the three platform parsers
+disagree about it:
 
-So TypeScript accepts it and both ports reject it.
-`rs/tests/json_test.rs` pins that by asserting **both** that this crate
-rejects the input and that `serde_json` does. If a future `serde_json`
-starts accepting it, the test goes red and the divergence is revisited
-rather than going wrong unnoticed.
+| Platform | `1e999` | `1e-999` | 200 levels of nesting |
+|---|---|---|---|
+| `JSON.parse` | infinity | `0` | accepted |
+| `encoding/json` | error | `0` | accepted |
+| `serde_json` | error | `0` | error |
+
+So TypeScript accepts the exponent and both ports reject it, and only
+Rust limits nesting. `rs/tests/json_test.rs` pins both by asserting
+**both** that this crate rejects the input and that `serde_json` does. If
+a future `serde_json` starts accepting either, the test goes red and the
+divergence is revisited rather than going wrong unnoticed.
+
+The nesting limit carries a second justification the exponent does not.
+Without it, a kilobyte of open brackets ends the process with a stack
+overflow instead of returning an error. A library that parses input its
+caller did not write has to answer rather than abort, so the limit would
+be worth having even if `serde_json` had none.
 
 The same test file carries the parity runner's second opinion: every
 valid fixture row is parsed by `serde_json` as well, and the two results
-must agree. That is what makes the asymmetry above testable rather than
+must agree. That is what makes the asymmetries above testable rather than
 merely asserted, and it is the same technique `go/parity_test.go` uses
 against `encoding/json`.
+
+## The external corpus, and what it found
+
+`rs/tests/conformance_test.rs` grades the pinned
+[nst/JSONTestSuite](https://github.com/nst/JSONTestSuite) corpus, the
+same 318 cases the TypeScript and Go suites grade, fetching it on first
+use. Case names carry the contract: `y_` must be accepted, with the value
+the platform parser produces; `n_` must be rejected, with a code; and
+`i_` is implementation-defined, where the promise is agreement with the
+platform.
+
+**All 283 mandatory cases pass.** The stack overflow above was found by
+this grader, not predicted: `i_structure_500_nested_arrays` is one
+kilobyte of brackets.
+
+Eleven of the 35 implementation-defined cases differ from `serde_json`,
+and each is named in the test with its reason rather than skipped as a
+class. Ten are lone surrogates in a `\u` escape, which `serde_json`
+rejects and this parser turns into U+FFFD, as `encoding/json` does;
+changing that would make this runtime's string decoding differ from the
+other two, which is a decision for the engine rather than for a grammar
+plugin. The eleventh is a 48-digit integer where `serde_json` lands a
+unit in the last place away from what the Rust standard library returns,
+so here the engine is the accurate one and matching the oracle would mean
+being deliberately less so.
+
+The register is asserted in both directions. A case that leaves the list
+by starting to agree fails as a stale entry, and one that joins it
+without being written down fails as a regression, so the count cannot
+drift on its own.
+
+Rust also meets the corpus at a boundary the other two do not have.
+Twenty-five cases are not valid UTF-8, and `parse` takes a `&str`, which
+cannot hold them: such a source cannot be built into an argument at all,
+so a caller has no way to submit it. The grader reports that as the rejection
+it is, and holds `serde_json::from_slice`, which also refuses invalid
+UTF-8, to the same bytes.
 
 ## Differences from the TypeScript version
 
@@ -205,6 +250,10 @@ parity contract, but the runtime realities differ:
 - **`result.fail` is unset.** TypeScript and Go set it to the undefined
   sentinel and `NaN`. Neither is reachable here, because `text.lex` is
   false and the bare words are therefore not tokens at all.
+- **Nesting is capped at 127 levels**, through the engine's parse budget.
+  Neither other runtime caps it, because neither other platform parser
+  does. The rejection carries the engine's `cancel` code, which is
+  therefore a Rust-only code with no shared fixture behind it.
 - **Default-instance mechanism.** Rust uses a `OnceLock`; Go uses
   `sync.Once`; TypeScript uses a lazily assigned module variable. All
   three reuse one engine and build a fresh context per parse, so all

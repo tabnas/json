@@ -9,58 +9,24 @@
 
 mod common;
 
+use common::oracle::{same, to_json};
 use common::spec;
-use tabnas::Value;
 
-/// The engine's value as serde_json's, so the two can be compared.
-fn to_json(value: &Value) -> serde_json::Value {
-    match value {
-        Value::Null => serde_json::Value::Null,
-        Value::Bool(b) => serde_json::Value::Bool(*b),
-        Value::Number(n) => serde_json::Number::from_f64(*n)
-            .map(serde_json::Value::Number)
-            .unwrap_or(serde_json::Value::Null),
-        Value::String(s) => serde_json::Value::String(s.clone()),
-        Value::Array(items) => serde_json::Value::Array(items.iter().map(to_json).collect()),
-        Value::Object(entries) => serde_json::Value::Object(
-            entries
-                .iter()
-                .map(|(k, v)| (k.clone(), to_json(v)))
-                .collect(),
-        ),
-        other => serde_json::Value::String(format!("<unrepresentable: {other:?}>")),
-    }
-}
+/// The comparator is a claim about what it REJECTS, and a clean run over
+/// agreeing values cannot tell a working one from `_ , _ => true`. Signed
+/// zero is the case it exists for, so it is the case pinned here.
+#[test]
+fn the_comparator_keeps_signed_zero_apart() {
+    let neg: serde_json::Value = serde_json::from_str("-0").expect("parses");
+    let pos: serde_json::Value = serde_json::from_str("0").expect("parses");
+    assert!(!same(&neg, &pos), "-0 and 0 must not compare equal");
+    assert!(same(&neg, &neg) && same(&pos, &pos), "each equals itself");
 
-/// Deep equality that compares numbers numerically.
-///
-/// serde_json keeps the lexical form (`0` is an integer `Number`, `0.0` a
-/// float), while every value this engine produces is an f64. Comparing
-/// the reprs would fail every whole-number row for a difference that is
-/// not one. Go's runner normalises the same way.
-fn same(a: &serde_json::Value, b: &serde_json::Value) -> bool {
-    use serde_json::Value as J;
-    match (a, b) {
-        (J::Number(x), J::Number(y)) => match (x.as_f64(), y.as_f64()) {
-            // `to_bits` rather than `==` so -0.0 and 0.0 stay distinct,
-            // which the value contract keeps and the fixtures rely on.
-            (Some(x), Some(y)) => x.to_bits() == y.to_bits() || x == y,
-            _ => x == y,
-        },
-        (J::Array(x), J::Array(y)) => {
-            x.len() == y.len() && x.iter().zip(y).all(|(x, y)| same(x, y))
-        }
-        (J::Object(x), J::Object(y)) => {
-            // Zipped rather than keyed, so KEY ORDER is compared too --
-            // the TypeScript runner pins it by comparing renderings, Go in
-            // a separate order test; doing it here keeps it in one place.
-            x.len() == y.len()
-                && x.iter()
-                    .zip(y)
-                    .all(|((xk, xv), (yk, yv))| xk == yk && same(xv, yv))
-        }
-        _ => a == b,
-    }
+    // Whole numbers still compare across serde_json's lexical forms, which
+    // is what the numeric comparison is for.
+    let int: serde_json::Value = serde_json::from_str("1").expect("parses");
+    let float: serde_json::Value = serde_json::from_str("1.0").expect("parses");
+    assert!(same(&int, &float), "1 and 1.0 are the same number");
 }
 
 #[test]
@@ -78,15 +44,19 @@ fn spec() {
                         "{at}: expected error {code}, parsed {:?}",
                         to_json(&value)
                     )),
-                    Err(error) => {
-                        let text = error.to_string();
-                        if !text.contains(code) {
-                            failures.push(format!(
-                                "{at}: expected error {code}, got {}",
-                                text.lines().next().unwrap_or_default()
-                            ));
-                        }
+                    // The CODE field, compared for equality. This searched
+                    // the rendered diagnostic for the code as a SUBSTRING,
+                    // which is not the contract and is not even a reliable
+                    // proxy for it: `unexpected` is a substring of a
+                    // hypothetical `unexpected_eof`, and the report quotes
+                    // the offending source, so a row whose own input held
+                    // the word would have passed whatever the parser did.
+                    // AGENTS.md rule 3 makes the code itself the shared
+                    // contract, so assert the code itself.
+                    Err(error) if error.code != code => {
+                        failures.push(format!("{at}: expected error {code}, got {}", error.code))
                     }
+                    Err(_) => {}
                 }
                 continue;
             }

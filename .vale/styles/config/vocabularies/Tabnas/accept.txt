@@ -41,6 +41,7 @@
 [Ss]ubprocess
 [Tt]abnas
 [Uu]nexported
+[Uu]ntrusted
 [Vv]ariadic
 [Vv]endored
 [Ww]alkthrough

@@ -1,11 +1,11 @@
-# Build, test and publish both the TypeScript (ts/) and Go (go/)
-# implementations. ts/ is canonical; go/ tracks it.
+# Build, test and publish the TypeScript (ts/), Go (go/) and Rust (rs/)
+# implementations. ts/ is canonical; go/ and rs/ track it.
 #
 # Local build/test resolve the unpublished @tabnas siblings via the
 # repo-set go.work + node_modules symlinks (admin/scripts/link.sh).
 
 .PHONY: all build test clean build-ts build-go build-rs test-ts test-go test-rs \
-        clean-ts clean-go clean-rs publish-ts publish-go tags-go reset \
+        clean-ts clean-go clean-rs publish-ts publish-go version-rs tags-go reset \
         json-test-suite \
         prose prose-counts
 
@@ -54,10 +54,20 @@ clean-go:
 # Injects V into the Go `VERSION` const, commits, tags go/vX.Y.Z, and
 # (when gh is available) creates a GitHub release.
 #
-# NOTE: this rewrites go/json.go ONLY. It does NOT touch ts/src/json.ts or
-# ts/package.json — keeping the two runtimes in sync is the release
-# orchestrator's job (admin/publish.sh), and the version tests in both
-# runtimes fail the build if they ever drift.
+# NOTE: this rewrites go/json.go ONLY. It does NOT touch ts/src/json.ts,
+# ts/package.json or the Rust sites — keeping the runtimes in sync is the
+# release orchestrator's job (admin/publish.sh), and the version tests in
+# every runtime fail the build if they ever drift.
+publish-go: test-go
+	@test -n "$(V)" || (echo "Usage: make publish-go V=x.y.z" && exit 1)
+	sed -i.bak 's/^const VERSION = ".*"/const VERSION = "$(V)"/' go/json.go
+	rm -f go/json.go.bak
+	git add go/json.go
+	git commit -m "go: v$(V)"
+	git tag go/v$(V)
+	git push origin main go/v$(V)
+	@command -v gh >/dev/null 2>&1 && gh release create go/v$(V) --title "go/v$(V)" --notes "Go module release v$(V)" || true
+
 # --- Rust (crate in rs/) ---
 build-rs:
 	cd rs && cargo build --all-targets
@@ -69,15 +79,23 @@ test-rs:
 clean-rs:
 	cd rs && cargo clean
 
-publish-go: test-go
-	@test -n "$(V)" || (echo "Usage: make publish-go V=x.y.z" && exit 1)
-	sed -i.bak 's/^const VERSION = ".*"/const VERSION = "$(V)"/' go/json.go
-	rm -f go/json.go.bak
-	git add go/json.go
-	git commit -m "go: v$(V)"
-	git tag go/v$(V)
-	git push origin main go/v$(V)
-	@command -v gh >/dev/null 2>&1 && gh release create go/v$(V) --title "go/v$(V)" --notes "Go module release v$(V)" || true
+# Set the Rust crate version: make version-rs V=x.y.z
+#
+# Bumps BOTH Rust version sites, plus the crate's own entry in
+# rs/Cargo.lock, which rs/tests/version_test.rs holds to
+# ts/package.json. A release that bumps the TS and Go sites and forgets
+# these fails that test.
+#
+# Unlike publish-go it neither commits nor tags. There is nothing to
+# release: the crate depends on the engine by path, and crates.io does
+# not accept a path dependency, so tabnas-json is not published. Only the
+# constants need to stay in step.
+version-rs:
+	@test -n "$(V)" || (echo "Usage: make version-rs V=x.y.z" && exit 1)
+	sed -i.bak 's/^version = ".*"/version = "$(V)"/' rs/Cargo.toml
+	sed -i.bak 's/^pub const VERSION: &str = ".*";/pub const VERSION: \&str = "$(V)";/' rs/src/lib.rs
+	rm -f rs/Cargo.toml.bak rs/src/lib.rs.bak
+	cd rs && cargo metadata --format-version 1 --offline >/dev/null
 
 # List published Go module tags, newest first.
 tags-go:

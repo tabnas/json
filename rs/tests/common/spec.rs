@@ -102,6 +102,14 @@ pub fn files() -> Vec<String> {
         .filter(|name| name.ends_with(".tsv"))
         .collect();
     names.sort();
+    // An empty list would run zero rows and `report` would then find no
+    // failures, so the parity suite would go green having tested nothing.
+    // A rename or a deletion under test/spec has to be loud.
+    assert!(
+        !names.is_empty(),
+        "{} holds no .tsv fixtures; the parity suite would test nothing",
+        spec_dir().display()
+    );
     names
 }
 
