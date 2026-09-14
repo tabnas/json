@@ -6,7 +6,8 @@ API see [`reference.md`](reference.md); for the design see
 [`concepts.md`](concepts.md).
 
 The library is `tabnas_json` (package `tabnas-json`); the engine is
-`tabnas`.
+`tabnas`, which your own `Cargo.toml` must name as well, since a crate's
+dependencies do not reach its dependents.
 
 ## Parse a string and use the result
 

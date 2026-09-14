@@ -6,7 +6,10 @@ design see [`concepts.md`](concepts.md).
 
 - **Package:** `tabnas-json`
 - **Library:** `tabnas_json`
-- **Engine:** `tabnas` (path dependency on `../../parser/rs`)
+- **Engine:** `tabnas` (path dependency on `../../parser/rs`). Depend on
+  it directly as well: a crate's dependencies are not passed on to its
+  dependents, so `tabnas-json` alone does not put `tabnas` in your extern
+  prelude. Only `JsonError` is re-exported.
 - **Edition:** 2021
 - **Minimum supported Rust version:** 1.85
 

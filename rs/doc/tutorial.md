@@ -28,11 +28,14 @@ crate by path:
 ```toml
 [dependencies]
 tabnas-json = { path = "../json/rs" }
+tabnas = { path = "../parser/rs" }
 ```
 
-The engine comes along with it: `rs/Cargo.toml` already resolves
-`tabnas` to `../../parser/rs`, so there is no second entry to add and
-nothing to fetch.
+**Both entries are needed.** A crate's dependencies are not passed on to
+its dependents, so `tabnas-json` alone does not put `tabnas` in your
+extern prelude, and the `use tabnas::...` lines below would not resolve.
+The crate re-exports only `JsonError`, for the one type you cannot avoid
+touching. Go asks for the same two imports for the same reason.
 
 ## Step 2: Parse a value
 
@@ -53,7 +56,8 @@ Every number is an `f64`, integers included, which is why `42` prints as
 
 ## Step 3: Parse objects and arrays
 
-The same `parse` handles structured data. Nesting works to any depth.
+The same `parse` handles structured data, nested as deeply as a real
+document needs.
 
 ```rust
 use tabnas::Value;
@@ -74,6 +78,9 @@ if let Value::Object(fields) = &object {
 
 Raw string literals (`r#"..."#`) keep the double quotes readable, and
 insignificant whitespace between tokens is ignored, as in standard JSON.
+
+Nesting is allowed up to 127 levels, which is where `serde_json` stops
+too. Step 4 says what happens past that.
 
 An `Object` holds an `IndexMap`, so the keys come back in the order the
 document wrote them. That is a difference from the Go port, where a map

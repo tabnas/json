@@ -59,9 +59,19 @@ fn strict_number() -> &'static Regex {
 /// structural character or whitespace. That boundary is what the engine's
 /// (lenient) number matcher would consider, so it is what has to be
 /// judged.
+///
+/// `/` is a boundary too, and not for strict JSON's sake: a slash after a
+/// number is invalid there whatever this returns. It is for the JSONC
+/// recipe the docs describe. With comment lexing re-enabled,
+/// `{"a":1/* note */}` has no space between the number and the comment,
+/// so without `/` here the literal scanned to the next WHITESPACE and the
+/// hook judged `1/*`, failed the pattern, and answered `Skip` -- turning
+/// a valid JSONC document into `unexpected`. Stopping here lets the
+/// number tokenize and leaves the comment to the lexer, which is the one
+/// that knows whether comments are on.
 fn leading_literal(src: &str) -> &str {
     let end = src
-        .find(|c: char| c.is_whitespace() || matches!(c, ',' | '}' | ']' | ':' | '"'))
+        .find(|c: char| c.is_whitespace() || matches!(c, ',' | '}' | ']' | ':' | '"' | '/'))
         .unwrap_or(src.len());
     &src[..end]
 }

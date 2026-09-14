@@ -59,7 +59,13 @@ and point at it:
 ```toml
 [dependencies]
 tabnas-json = { path = "../json/rs" }
+tabnas = { path = "../parser/rs" }
 ```
+
+Both entries are needed. A crate's dependencies are not passed on to its
+dependents, so `tabnas-json` alone does not put `tabnas` in your extern
+prelude, and the examples above that name `tabnas::Tabnas` would not
+resolve. Only `JsonError` is re-exported.
 
 ## Differences from the canonical TypeScript
 

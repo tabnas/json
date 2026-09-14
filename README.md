@@ -23,8 +23,14 @@ more: objects, arrays, strings, numbers, and the literals `true`, `false`
 and `null`. It rejects everything an extended grammar would relax:
 comments, trailing commas, unquoted keys, single-quoted and multiline
 strings, implicit objects and arrays, hex/octal numbers, leading zeros.
-If `JSON.parse` (TS/JS), `encoding/json` (Go) or `serde_json` (Rust)
-would reject the input, so does this parser.
+If `JSON.parse` (TS/JS) or `encoding/json` (Go) would reject the input,
+so does this parser. Rust holds the same line on every case RFC 8259
+makes mandatory; on the handful the RFC leaves implementation-defined it
+differs from `serde_json` in eleven documented places, listed in
+`rs/tests/conformance_test.rs` and summarised in
+[`rs/doc/concepts.md`](rs/doc/concepts.md). The largest group is a lone
+surrogate in a `\u` escape, which `serde_json` rejects and this parser
+turns into U+FFFD, as `encoding/json` does.
 
 That claim is verified against
 [nst/JSONTestSuite](https://github.com/nst/JSONTestSuite), the standard

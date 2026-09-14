@@ -39,6 +39,19 @@ fn spec() {
             let result = tabnas_json::parse(&row.input);
 
             if let Some(code) = row.expected.strip_prefix("ERROR:") {
+                // The oracle on the REJECTING side too, which the
+                // canonical TypeScript runner does (`errorCode` answers
+                // the pseudo-code `the-platform-parser-accepted-it`) and
+                // this runner did not. Without it, a row could assert
+                // only that this parser rejects and never notice that the
+                // platform accepts -- exactly the direction rule 4 cares
+                // about, since a JSON parser that refuses what its own
+                // platform takes is as wrong as one that accepts more.
+                if serde_json::from_str::<serde_json::Value>(&row.input).is_ok() {
+                    failures.push(format!(
+                        "{at}: fixture expects {code}, but serde_json accepts this input"
+                    ));
+                }
                 match result {
                     Ok(value) => failures.push(format!(
                         "{at}: expected error {code}, parsed {:?}",

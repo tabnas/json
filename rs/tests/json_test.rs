@@ -173,3 +173,34 @@ fn rejects_nesting_deeper_than_its_platform_oracle() {
         "a deep source must not crash"
     );
 }
+
+#[test]
+fn the_jsonc_recipe_takes_a_comment_against_a_number() {
+    // The layering recipe the docs describe, with no space between the
+    // number and the comment. That is the case the number preflight hook
+    // got wrong: it scanned the candidate literal to the next WHITESPACE,
+    // so it judged `1/*` rather than `1`, failed the strict pattern and
+    // answered Skip -- turning valid JSONC into `unexpected`. The spaced
+    // forms worked, which is why nothing caught it.
+    let mut jsonc = tabnas::Tabnas::new();
+    tabnas_json::json(&mut jsonc).expect("plugin installs");
+    jsonc
+        .set_options(|options: &mut tabnas::Options| {
+            options.comment.lex = true;
+        })
+        .expect("options apply");
+
+    for src in [
+        r#"{"a":1/* note */}"#,
+        "{\"a\":1//note\n}",
+        r#"[1/* x */,2]"#,
+        r#"{"a":1 /* spaced */}"#,
+    ] {
+        assert!(jsonc.parse(src).is_ok(), "JSONC must accept {src:?}");
+    }
+
+    // And none of that loosens strict JSON, which has no comments at all.
+    for src in [r#"{"a":1/* note */}"#, "1/2", "{\"a\":1//x\n}"] {
+        assert!(parse(src).is_err(), "strict JSON must reject {src:?}");
+    }
+}
