@@ -104,7 +104,7 @@ that name. The `err.message` is a human-readable, source-pointing message.
 
 ## Step 6: Build your own parser instance
 
-`parse` uses one shared, lazily-built engine. When you want to customize
+`parse` uses one shared, lazily built engine. When you want to customize
 the parser, build your own instance with `make`. Extra options are
 applied on top of the strict JSON configuration:
 

@@ -51,7 +51,7 @@ problem. The three codes this parser emits are `unexpected`,
 
 ## Reuse a parser efficiently
 
-The top-level `parse` already reuses a single lazily-built engine, so
+The top-level `parse` already reuses a single lazily built engine, so
 repeated calls do not rebuild the grammar. When you need a *configured*
 parser, build one with `make` and keep it around:
 

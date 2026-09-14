@@ -58,7 +58,7 @@ parity contract shared with the TypeScript version.
 
 ## Reuse a parser efficiently
 
-The top-level `Parse` already reuses a single lazily-built engine, so
+The top-level `Parse` already reuses a single lazily built engine, so
 repeated calls do not rebuild the grammar, and it is safe for concurrent
 use because each parse builds its own context. When you need a
 *configured* parser, build one with `Make` and keep it around:
