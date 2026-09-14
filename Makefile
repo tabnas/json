@@ -4,18 +4,18 @@
 # Local build/test resolve the unpublished @tabnas siblings via the
 # repo-set go.work + node_modules symlinks (admin/scripts/link.sh).
 
-.PHONY: all build test clean build-ts build-go test-ts test-go \
-        clean-ts clean-go publish-ts publish-go tags-go reset \
+.PHONY: all build test clean build-ts build-go build-rs test-ts test-go test-rs \
+        clean-ts clean-go clean-rs publish-ts publish-go tags-go reset \
         json-test-suite \
         prose prose-counts
 
 all: build test
 
-build: build-ts build-go
+build: build-ts build-go build-rs
 
-test: test-ts test-go
+test: test-ts test-go test-rs
 
-clean: clean-ts clean-go
+clean: clean-ts clean-go clean-rs
 
 # --- External conformance suite ---
 # Fetch nst/JSONTestSuite at its pinned commit into test/jsontestsuite
@@ -58,6 +58,17 @@ clean-go:
 # ts/package.json — keeping the two runtimes in sync is the release
 # orchestrator's job (admin/publish.sh), and the version tests in both
 # runtimes fail the build if they ever drift.
+# --- Rust (crate in rs/) ---
+build-rs:
+	cd rs && cargo build --all-targets
+
+test-rs:
+	cd rs && cargo test --all-targets
+	cd rs && cargo clippy --all-targets --all-features -- -D warnings
+
+clean-rs:
+	cd rs && cargo clean
+
 publish-go: test-go
 	@test -n "$(V)" || (echo "Usage: make publish-go V=x.y.z" && exit 1)
 	sed -i.bak 's/^const VERSION = ".*"/const VERSION = "$(V)"/' go/json.go
