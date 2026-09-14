@@ -41,7 +41,8 @@ Full [Diátaxis](https://diataxis.fr) docs:
 - [`doc/reference.md`](doc/reference.md). The exact API and CLI surface.
 - [`doc/concepts.md`](doc/concepts.md). How it works and why.
 
-The Go port has the [equivalent docs](../go/doc/).
+The Go port has the [equivalent docs](../go/doc/), and so does the Rust
+port in [`../rs/doc/`](../rs/doc/).
 
 ## Use it as a plugin
 

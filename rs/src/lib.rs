@@ -261,7 +261,19 @@ pub fn make() -> Tabnas {
     parser
 }
 
-/// Parse a JSON source string and return the resulting value.
+/// Parse a JSON source string with the shared default parser.
+///
+/// The engine is built once, on first use, and reused after that. Both
+/// other runtimes do the same (`sync.Once` in `go/json.go`, a lazily
+/// assigned module variable in `ts/src/json.ts`), and reuse is safe here
+/// for the same reason it is there: [`Tabnas::parse`] takes `&self` and
+/// builds a fresh parse context per call, and `Tabnas` is `Send + Sync`,
+/// so concurrent callers share one installed grammar instead of each
+/// rebuilding it. `tests/json_test.rs` pins that with a threaded test.
+///
+/// Use [`make`] instead when the parser needs configuring: that returns a
+/// fresh instance and leaves this one alone.
 pub fn parse(src: &str) -> Result<Value, JsonError> {
-    make().parse(src)
+    static DEFAULT: OnceLock<Tabnas> = OnceLock::new();
+    DEFAULT.get_or_init(make).parse(src)
 }

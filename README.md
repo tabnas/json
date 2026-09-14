@@ -7,8 +7,8 @@
 [![tabnas standard](https://tabnas.github.io/status/badges/json-standard.svg)](https://tabnas.github.io/status/)
 <!-- /tabnas-badges -->
 
-A standard JSON parser for TypeScript/JavaScript and Go, built as a
-grammar plugin for the [`tabnas`](https://github.com/tabnas/parser)
+A standard JSON parser for TypeScript/JavaScript, Go and Rust, built as
+a grammar plugin for the [`tabnas`](https://github.com/tabnas/parser)
 parsing engine.
 
 Docs, guides, the error reference and the playground: **[tabnas.dev](https://tabnas.dev)**.
@@ -23,23 +23,25 @@ more: objects, arrays, strings, numbers, and the literals `true`, `false`
 and `null`. It rejects everything an extended grammar would relax:
 comments, trailing commas, unquoted keys, single-quoted and multiline
 strings, implicit objects and arrays, hex/octal numbers, leading zeros.
-If `JSON.parse` (TS/JS) or `encoding/json` (Go) would reject the input,
-so does this parser.
+If `JSON.parse` (TS/JS), `encoding/json` (Go) or `serde_json` (Rust)
+would reject the input, so does this parser.
 
 That claim is verified against
 [nst/JSONTestSuite](https://github.com/nst/JSONTestSuite), the standard
 cross-implementation JSON parsing suite: **95/95 must-accept, 188/188
 must-reject, and all 35 implementation-defined cases matching the platform
-parser, in both runtimes**. The suite is not vendored; fetch it with
-`make json-test-suite` and the conformance tests in
+parser, in the TypeScript and Go runtimes**. The suite is not vendored;
+fetch it with `make json-test-suite` and the conformance tests in
 `ts/test/conformance.test.js` / `go/conformance_test.go` run as part of
-the normal test suite.
+the normal test suite. The Rust port runs the shared fixtures in
+[`test/spec/`](test/spec/) with `serde_json` as a second opinion on every
+valid row.
 
 ## How it works
 
 The [`tabnas`](https://github.com/tabnas/parser) engine ships **no
 grammar**; every grammar is a plugin. This package supplies the
-standard-JSON grammar plugin for both runtimes. The rule set
+standard-JSON grammar plugin for all three runtimes. The rule set
 (`val` / `map` / `list` / `pair` / `elem`) is the **"Plain JSON"** grammar
 from [`jsonic`](https://github.com/tabnas/jsonic), the pure-JSON core
 jsonic defines before extending it for the relaxed jsonic format. Here
@@ -62,23 +64,28 @@ then layer additional rules on the shared `val` / `map` / `list` /
 |---|---|
 | **TypeScript / JavaScript** (`@tabnas/json`) | [`ts/README.md`](ts/README.md) |
 | **Go** (`github.com/tabnas/json/go`) | [`go/README.md`](go/README.md) |
+| **Rust** (`tabnas-json`) | [`rs/README.md`](rs/README.md) |
 
-Both runtimes are grammar plugins on the `tabnas` engine: the TypeScript
+All three are grammar plugins on the `tabnas` engine: the TypeScript
 package on the `@tabnas/parser` npm package, the Go module on
-`github.com/tabnas/parser/go`. TypeScript is canonical: both suites run
-the shared conformance fixtures in [`test/spec/`](test/spec/).
+`github.com/tabnas/parser/go`, the Rust crate on the `tabnas` crate.
+TypeScript is canonical, and all three suites run the shared conformance
+fixtures in [`test/spec/`](test/spec/).
 
 ## Documentation
 
 Full [Diátaxis](https://diataxis.fr) documentation, four quadrants per
 runtime:
 
-| | TypeScript / JavaScript | Go |
-|---|---|---|
-| **Tutorial** (learn) | [`ts/doc/tutorial.md`](ts/doc/tutorial.md) | [`go/doc/tutorial.md`](go/doc/tutorial.md) |
-| **How-to** (recipes) | [`ts/doc/guide.md`](ts/doc/guide.md) | [`go/doc/guide.md`](go/doc/guide.md) |
-| **Reference** (API/CLI) | [`ts/doc/reference.md`](ts/doc/reference.md) | [`go/doc/reference.md`](go/doc/reference.md) |
-| **Concepts** (why) | [`ts/doc/concepts.md`](ts/doc/concepts.md) | [`go/doc/concepts.md`](go/doc/concepts.md) |
+| | TypeScript / JavaScript | Go | Rust |
+|---|---|---|---|
+| **Tutorial** (learn) | [`ts/doc/tutorial.md`](ts/doc/tutorial.md) | [`go/doc/tutorial.md`](go/doc/tutorial.md) | [`rs/doc/tutorial.md`](rs/doc/tutorial.md) |
+| **How-to** (recipes) | [`ts/doc/guide.md`](ts/doc/guide.md) | [`go/doc/guide.md`](go/doc/guide.md) | [`rs/doc/guide.md`](rs/doc/guide.md) |
+| **Reference** (API/CLI) | [`ts/doc/reference.md`](ts/doc/reference.md) | [`go/doc/reference.md`](go/doc/reference.md) | [`rs/doc/reference.md`](rs/doc/reference.md) |
+| **Concepts** (why) | [`ts/doc/concepts.md`](ts/doc/concepts.md) | [`go/doc/concepts.md`](go/doc/concepts.md) | [`rs/doc/concepts.md`](rs/doc/concepts.md) |
+
+The command-line tool is a TypeScript and Go feature; the Rust port is a
+library only.
 
 ## Quick example
 
@@ -109,6 +116,17 @@ v, err := tabnasjson.Parse(`{"a":1,"b":[2,3]}`)
 j := tabnas.Make()
 j.Use(tabnasjson.Json)
 v, err = j.Parse(`[1,2,3]`)
+```
+
+Rust:
+
+```rust
+let value = tabnas_json::parse(r#"{"a":1,"b":[2,3]}"#)?;
+
+// or install the plugin on your own engine instance:
+let mut parser = tabnas::Tabnas::new();
+tabnas_json::json(&mut parser)?;
+let value = parser.parse("[1,2,3]")?;
 ```
 
 ## Building locally

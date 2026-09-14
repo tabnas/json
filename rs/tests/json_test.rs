@@ -104,3 +104,34 @@ fn an_instance_is_reusable() {
     // Still usable after a failure.
     assert!(parser.parse("3").is_ok());
 }
+
+#[test]
+fn the_shared_default_parser_takes_concurrent_callers() {
+    // `parse` builds its engine once and hands every caller the same one,
+    // as `sync.Once` does in the Go port. Sharing is pinned by the
+    // compiler (a `&mut self` parse would not fit in a `OnceLock`); what
+    // is NOT pinned by the compiler, and is what this holds, is that the
+    // shared engine keeps no state between parses. Failing parses are
+    // interleaved with succeeding ones on purpose: a lexer or rule-stack
+    // leak across calls would surface as a wrong value or a spurious
+    // error here, and nowhere else in a suite that is otherwise
+    // single-threaded and one-parse-per-instance.
+    let threads: Vec<_> = (0..8)
+        .map(|n| {
+            std::thread::spawn(move || {
+                let src = format!(r#"{{"n":{n},"xs":[1,2,3]}}"#);
+                for _ in 0..50 {
+                    let value = parse(&src).expect("parses");
+                    let Value::Object(fields) = &value else {
+                        panic!("an object, got {value:?}")
+                    };
+                    assert_eq!(fields["n"], Value::Number(f64::from(n)));
+                    assert!(parse("{bad").is_err());
+                }
+            })
+        })
+        .collect();
+    for thread in threads {
+        thread.join().expect("no thread panicked");
+    }
+}

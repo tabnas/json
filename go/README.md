@@ -51,7 +51,8 @@ Full [Diátaxis](https://diataxis.fr) docs:
 - [`doc/concepts.md`](doc/concepts.md). How it works, including the
   differences from the TypeScript version.
 
-TypeScript is canonical; its docs are in [`../ts/doc/`](../ts/doc/).
+TypeScript is canonical; its docs are in [`../ts/doc/`](../ts/doc/). The
+Rust port has the equivalent set in [`../rs/doc/`](../rs/doc/).
 
 ## Use it as a plugin
 
