@@ -5,8 +5,8 @@ A standard JSON parser (RFC 8259 / ECMA-404) for Go: the standard-JSON
 parsing engine (`github.com/tabnas/parser/go`).
 
 This is the Go port of [`@tabnas/json`](../ts/). TypeScript is canonical;
-both runtimes share the conformance fixtures in
-[`../test/spec/`](../test/spec/) and produce identical results.
+all three runtimes share the conformance fixtures in
+[`../test/spec/`](../test/spec/) and produce identical results on them.
 
 ## Install
 
