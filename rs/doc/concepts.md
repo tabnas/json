@@ -186,9 +186,9 @@ the platform parser produces; `n_` must be rejected, with a code; and
 `i_` is implementation-defined, where the promise is agreement with the
 platform.
 
-**All 283 mandatory cases pass.** The stack overflow above was found by
-this grader, not predicted: `i_structure_500_nested_arrays` is one
-kilobyte of brackets.
+**All 283 mandatory cases pass.** The corpus is what exercises the depth
+limit above: `i_structure_500_nested_arrays` is one kilobyte of
+brackets.
 
 Eleven of the 35 implementation-defined cases differ from `serde_json`,
 and each is named in the test with its reason rather than skipped as a
@@ -215,8 +215,10 @@ UTF-8, to the same bytes.
 
 ## Differences from the TypeScript version
 
-The behavior is identical apart from the number range above, which is the
-parity contract, but the runtime realities differ:
+Three behaviours differ, each because this port follows its own platform
+rather than TypeScript's: the number range and the nesting limit above,
+and the key ordering below. Everything else is the parity contract, and
+what changes is the runtime realities:
 
 - **Error signaling.** Rust `parse` *returns* `Result<Value, JsonError>`;
   the TypeScript `parse` *throws* a `TabnasError`. `JsonError` is the
@@ -235,8 +237,7 @@ parity contract, but the runtime realities differ:
   unordered. TypeScript differs in one case, because a JavaScript object
   enumerates integer-like keys first in ascending numeric order, so
   `{"2":"a","1":"b"}` reads back as `1`, `2` there and as `2`, `1` here.
-  Non-index keys keep insertion order in both. No shared fixture covers
-  it, which is why nothing caught it before a review did.
+  Non-index keys keep insertion order in both.
 - **Numbers are always `f64`.** Integers included, so `1` becomes
   `Number(1.0)`, matching `serde_json`. TypeScript uses JavaScript's
   single `number` type.

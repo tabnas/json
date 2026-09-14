@@ -69,7 +69,7 @@ resolve. Only `JsonError` is re-exported.
 
 ## Differences from the canonical TypeScript
 
-Three, all deliberate:
+Four, all deliberate:
 
 - **Out-of-range exponents are rejected.** `1e999` is syntactically valid
   JSON, and the platform parsers disagree about it: `JSON.parse`
@@ -83,6 +83,11 @@ Three, all deliberate:
   keeps a deeply nested source from ending the process: without the
   limit, a kilobyte of open brackets overflows the stack instead of
   returning an error.
+- **Integer-like object keys keep document order.** A JavaScript object
+  enumerates them first, in ascending numeric order, so TypeScript reads
+  `{"2":"a","1":"b"}` back as `1`, `2` where this crate gives `2`, `1`.
+  An `IndexMap` does not reorder, and neither does `serde_json`. Non-index
+  keys keep insertion order in both.
 - **Strictness is a `check` hook, not `number.exclude`.** The TypeScript
   exclude is a negative lookahead, and the `regex` crate has no
   lookaround, so the positive pattern plus an inversion is the only way

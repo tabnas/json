@@ -92,8 +92,9 @@ is unordered.
 
 ## Step 4: See what gets rejected
 
-This parser is strict. Anything `serde_json` would reject, it rejects
-too. Each of these returns an error:
+This parser is strict: it rejects everything outside the JSON grammar,
+and on the cases RFC 8259 rules on it rejects exactly what `serde_json`
+rejects. Each of these returns an error:
 
 ```rust
 tabnas_json::parse("{a:1}");   // unquoted key

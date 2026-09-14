@@ -198,7 +198,7 @@ definition of strict JSON rather than two halves that can drift.
 | `string.multiChars` | `""` | No multiline string delimiters. |
 | `string.allowUnknown` | `false` | Reject unknown escapes such as `\q`. |
 | `string.escapeStrict` | `true` | Disable `\xHH` and `\u{...}`. |
-| `string.escape` | `{v: null, ': null, `: null}` | Delete the non-standard built-in escapes. |
+| `string.escape` | ``{v: null, ': null, `: null}`` | Delete the non-standard built-in escapes. |
 | `comment.lex` | `false` | No comments. |
 | `map.extend` | `false` | No trailing-comma map extension. |
 | `lex.empty` | `false` | Reject empty input. |
