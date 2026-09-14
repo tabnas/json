@@ -45,10 +45,15 @@ fn try_parse(src: &str) -> Result<tabnas::Value, (String, usize, usize)> {
 }
 ```
 
-The three codes this parser emits are `unexpected`,
-`unterminated_string` and `invalid_unicode`. These codes are part of the
-parity contract shared with the TypeScript version, so a caller matching
-on them works against any of the three runtimes.
+Three of the codes this parser emits are `unexpected`,
+`unterminated_string` and `invalid_unicode`. Those are the parity
+contract shared with the TypeScript version, so a caller matching on them
+works against any of the three runtimes.
+
+A fourth, `cancel`, is **Rust only**: it is what nesting past 127 levels
+answers, and neither other runtime limits depth, so there is nothing for
+them to agree with. Match on it if you parse input you did not write;
+otherwise treat any code you do not recognize as a rejection.
 
 `JsonError` implements `std::error::Error` and `Display`, so it fits the
 usual `?` and `Box<dyn Error>` plumbing, and printing it gives a
@@ -177,10 +182,24 @@ the `f64` bit comparison that keeps negative zero distinct from zero.
 ## Note on numbers and key ordering
 
 Every JSON number parses to an `f64`, integers included, so `1` becomes
-`Number(1.0)`. Object keys keep document order, because the engine's
-`Object` variant holds an `IndexMap` rather than a `HashMap`. That
-matches the TypeScript port, whose objects keep insertion order, and
-differs from the Go port, where a `map[string]any` is unordered.
+`Number(1.0)`. Object keys keep **document** order, because the engine's
+`Object` variant holds an `IndexMap` rather than a `HashMap`, which is
+what `serde_json` does too.
+
+That differs from the Go port, where a `map[string]any` is unordered, and
+it differs from TypeScript in one case worth knowing about. A JavaScript
+object enumerates integer-like keys first, in ascending numeric order,
+whatever order they were written in:
+
+```
+input   {"2":"a","1":"b","x":"c"}
+Rust    keys 2, 1, x   (document order, as serde_json gives)
+TS      keys 1, 2, x   (JavaScript's own rule for array-index keys)
+```
+
+Non-index keys keep insertion order in both. This is per-runtime parity
+again rather than a defect: each port gives what its platform gives.
+`rs/tests/json_test.rs` pins the Rust half against `serde_json`.
 
 Two cases differ from TypeScript on purpose, both because this port
 follows its own platform parser. An exponent out of `f64` range, such as

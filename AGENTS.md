@@ -81,11 +81,16 @@ first.
    for the two load-bearing details it has to get right.
 3. Error **codes** are part of the shared contract. `errors.tsv` and
    `reject-extended.tsv` are both `input → ERROR:<code>`, and all three
-   suites assert the exact code. The codes in use are `unexpected`,
+   suites assert the exact code. The SHARED codes are `unexpected`,
    `unterminated_string`, and `invalid_unicode`.
    The runtimes must reject the same input with the same code; if you add
    an error fixture, verify the code is identical in all three runtimes
    before committing it.
+
+   **`cancel` is Rust-only** and outside this contract: it is what the
+   depth budget in rule 4 answers, and neither other runtime limits
+   depth, so there is nothing for them to agree with. It must therefore
+   never appear in a shared fixture.
 4. Stay standard. Any change that would accept input `JSON.parse` /
    `encoding/json` reject (or reject input they accept) is a bug. Two
    pieces of `JSON_OPTIONS` (TS) / `jsonOptions` (Go) enforce strictness
@@ -109,6 +114,15 @@ first.
      `TestNumberOverflowRejected` in `go/json_test.go` and by
      `rejects_out_of_range_exponents_like_its_platform_oracle` in
      `rs/tests/json_test.rs`, which also asserts the oracle still agrees.
+   - **Integer-like object keys, Rust and Go against TS.** A JavaScript
+     object enumerates integer-like keys FIRST, in ascending numeric
+     order, whatever the document wrote: TS reads `{"2":"a","1":"b"}`
+     back as `1`, `2`. Rust's `IndexMap` keeps document order, which is
+     what `serde_json` does; Go's map is unordered, so the question does
+     not arise there. **No shared fixture may pin this**: the expected
+     column would have to hold two different renderings. Pinned instead
+     by `integer_like_keys_keep_document_order_like_its_platform_oracle`
+     in `rs/tests/json_test.rs`, which asserts the oracle agrees.
    - **Nesting depth, Rust only.** `serde_json` accepts 127 levels and
      refuses the 128th; `JSON.parse` and `encoding/json` both go far
      deeper, so neither TS nor Go limits depth. Rust does, through

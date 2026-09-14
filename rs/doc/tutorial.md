@@ -12,10 +12,14 @@ The package is `tabnas-json` and the library is `tabnas_json`.
 
 ## What you are building
 
-`tabnas_json` is a standard JSON parser: it accepts what `serde_json`
-accepts (RFC 8259 and ECMA-404) and nothing more. By the end you will
-have used it to turn JSON text into values, caught a parse error, and
-built a JSON-with-comments parser on top of it.
+`tabnas_json` is a standard JSON parser: it accepts the grammar of
+RFC 8259 and ECMA-404 and nothing more. On everything those standards
+make mandatory it agrees with `serde_json` exactly; on the handful of
+cases they leave implementation-defined it differs in eleven documented
+places, listed in `rs/tests/conformance_test.rs` and explained in
+[`concepts.md`](concepts.md). By the end you will have used it to turn
+JSON text into values, caught a parse error, and built a
+JSON-with-comments parser on top of it.
 
 ## Step 1: Add the dependency
 

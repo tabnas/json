@@ -116,9 +116,11 @@ quotes. Strictness comes from a handful of options:
 - `text.lex`, `comment.lex`, `map.extend` and `lex.empty` are off, and
   `tokenSet.KEY` forces keys to be quoted strings only.
 
-The trade-off is deliberate: this parser will never accept input
-`serde_json` rejects, and never reject input it accepts. For leniency,
-reach for jsonic or layer your own options on top, as the JSONC recipe in
+The trade-off is deliberate. On every input RFC 8259 rules on, this
+parser accepts what `serde_json` accepts and rejects what it rejects. The
+exceptions are the eleven cases the standard leaves implementation-
+defined, registered and explained below. For leniency, reach for jsonic
+or layer your own options on top, as the JSONC recipe in
 [`guide.md`](guide.md) does.
 
 ## TypeScript is canonical; Rust tracks it
@@ -228,9 +230,13 @@ parity contract, but the runtime realities differ:
   objects (with a **null prototype**), arrays, `number`, `string`,
   `boolean` and `null`. Rust has no prototype, so there is no
   prototype-pollution concern and no null-prototype caveat.
-- **Key order is preserved**, because the `Object` variant holds an
-  `IndexMap`. That matches TypeScript, whose objects keep insertion
-  order, and differs from Go, where a map is unordered.
+- **Key order is document order**, because the `Object` variant holds an
+  `IndexMap`, which is what `serde_json` gives. Go differs: a map is
+  unordered. TypeScript differs in one case, because a JavaScript object
+  enumerates integer-like keys first in ascending numeric order, so
+  `{"2":"a","1":"b"}` reads back as `1`, `2` there and as `2`, `1` here.
+  Non-index keys keep insertion order in both. No shared fixture covers
+  it, which is why nothing caught it before a review did.
 - **Numbers are always `f64`.** Integers included, so `1` becomes
   `Number(1.0)`, matching `serde_json`. TypeScript uses JavaScript's
   single `number` type.

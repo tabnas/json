@@ -57,6 +57,24 @@ The rejection carries the engine's `cancel` code. That is Rust-only:
 there is no shared fixture for it, because the other two runtimes have
 nothing to agree with.
 
+## Two divergences no shared fixture can hold
+
+Both are per-runtime parity (rule 4), and both are invisible to
+`test/spec/*.tsv` because a fixture row has ONE expected column and these
+runtimes legitimately produce different text.
+
+- **Integer-like object keys.** A JavaScript object enumerates them
+  first, in ascending numeric order, so TS reads `{"2":"a","1":"b"}` back
+  as `1`, `2`. An `IndexMap` keeps document order, as `serde_json` does.
+  Pinned by `integer_like_keys_keep_document_order_like_its_platform_oracle`.
+- **The `cancel` code.** The depth budget's rejection. Neither other
+  runtime limits depth, so it must never reach a shared fixture.
+
+Both were found by review, not by a test, and the docs asserted the
+opposite of the first until then. When adding a fixture, ask whether the
+row's expected text is the same in all three runtimes before assuming it
+is shareable.
+
 ## The conformance grader has a divergence register
 
 `tests/conformance_test.rs` grades the pinned nst/JSONTestSuite corpus,

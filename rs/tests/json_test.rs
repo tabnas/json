@@ -204,3 +204,33 @@ fn the_jsonc_recipe_takes_a_comment_against_a_number() {
         assert!(parse(src).is_err(), "strict JSON must reject {src:?}");
     }
 }
+
+#[test]
+fn integer_like_keys_keep_document_order_like_its_platform_oracle() {
+    // A JavaScript object enumerates integer-like keys FIRST, in ascending
+    // numeric order, whatever order the document wrote them: the
+    // TypeScript port reads `{"2":"a","1":"b"}` back as 1, 2. An IndexMap
+    // does not do that, and neither does serde_json, so this port keeps
+    // document order.
+    //
+    // Per-runtime parity again, not a defect. Pinned here because no
+    // shared fixture has an integer-like object key -- which is exactly
+    // why the docs claimed key order matched TypeScript until a review
+    // said otherwise.
+    let src = r#"{"2":"a","1":"b","x":"c"}"#;
+
+    let Value::Object(ours) = parse(src).expect("parses") else {
+        panic!("an object")
+    };
+    let keys: Vec<&str> = ours.keys().map(String::as_str).collect();
+    assert_eq!(keys, ["2", "1", "x"], "document order, not numeric order");
+
+    // And the oracle agrees, which is the half that makes this a parity
+    // claim rather than a preference.
+    let oracle: serde_json::Value = serde_json::from_str(src).expect("parses");
+    let serde_json::Value::Object(theirs) = oracle else {
+        panic!("an object")
+    };
+    let oracle_keys: Vec<&str> = theirs.keys().map(String::as_str).collect();
+    assert_eq!(keys, oracle_keys, "serde_json orders them the same way");
+}
