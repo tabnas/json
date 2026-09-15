@@ -2,11 +2,12 @@
 
 How the tabnas documentation is written. Adapted from
 [aontu](https://github.com/aontu-lang/aontu)'s `docs/STYLE-GUIDE.md`,
-with tabnas's terminology, two-runtime file layout, and executable-example
+with tabnas's terminology, per-runtime file layout, and executable-example
 conventions. This guide is normative for every page `ts/scripts/gated-docs.cjs`
-lists, which is the reader-facing set: 11 pages in this repository. It exists so that a page written next year sounds like a
-page written this year, and so that a reviewer can point at a rule instead
-of arguing taste.
+lists, which is the reader-facing set: 16 pages in this repository. It
+exists so that a page written next year sounds like a page written this
+year, and so that a reviewer can point at a rule instead of arguing
+taste.
 
 Three sources feed it, in a fixed priority order. The same order is
 encoded in `.vale.ini`, and every rule switched off there names the
@@ -40,9 +41,10 @@ drift from the other:
 | `ts/scripts/vale-counts.cjs` | `make prose` | that every count in `.vale.ini`, and the total below, are what Vale reports |
 
 The gated set is the reader-facing one: the language-neutral pages under
-`doc/`, the four Diátaxis kinds under `ts/doc/` and `go/doc/`, and the
-three package READMEs. The Rust-port series, the feasibility reports and
-the defect ledgers are working documents, and they are out.
+`doc/`, the four Diátaxis kinds under `ts/doc/`, `go/doc/` and `rs/doc/`,
+and the package READMEs (root, `ts/`, `go/`, `rs/`). The feasibility
+reports and the defect ledgers are working documents, and they are out.
+So is every `AGENTS.md`.
 
 **Four checks live in the local gate rather than in Vale, and the reason
 is capability, not preference.**
@@ -65,7 +67,7 @@ is capability, not preference.**
 
 **A Google rule sitting below error level was tried at error first and
 found wrong for these pages.** `.vale.ini` records what each produced on
-a clean run over the gated set: 281 alerts across 11 files. Those
+a clean run over the gated set: 473 alerts across 16 files. Those
 numbers were written by hand once, and this sentence and the one in
 `.vale.ini` drifted apart from each other and from a run.
 `node ts/scripts/vale-counts.cjs` now reads both against a live Vale run
@@ -100,11 +102,12 @@ tutorial, used in a guide, specified in the reference, argued in the
 explanation) but the normative statement lives in the reference and
 everything else links to it.
 
-**The two runtimes carry the same set.** A page present under `ts/doc/`
-and missing under `go/doc/` is a gap, and `gated-docs.cjs` filters to
-what is on disk so the gap shows up as a missing gate rather than a
-crash. A page only one port has is a deliberate exception and says so in
-its own opening lines.
+**Every runtime carries the same set.** A page present under `ts/doc/`
+and missing under `go/doc/` or `rs/doc/` is a gap. `gated-docs.cjs`
+THROWS on a declared page that is not on disk, so a rename or a deletion
+fails the build rather than quietly shrinking what the gate covers. A
+page only one port has is a deliberate exception and says so in its own
+opening lines.
 
 ## The published set cites nothing internal
 

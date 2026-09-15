@@ -22,8 +22,9 @@
 #   make json-test-suite                      # same thing
 #
 # It runs automatically before the conformance tests — the `pretest` npm
-# script in ts/, and TestMain in go/ — so a plain `npm test` or
-# `go test ./...`, in CI as well as locally, always grades against it.
+# script in ts/, TestMain in go/, and the `corpus()` OnceLock in
+# rs/tests/conformance_test.rs — so a plain `npm test`, `go test ./...`
+# or `cargo test`, in CI as well as locally, always grades against it.
 # When the corpus is absent the conformance tests FAIL rather than skip.
 
 set -e
@@ -31,9 +32,9 @@ set -e
 URL="https://github.com/nst/JSONTestSuite.git"
 SHA="1ef36fa01286573e846ac449e8683f8833c5b26a"
 
-# Exact case counts at the pinned commit. Both test runners re-assert these
-# before grading, so a narrowed or half-cloned corpus goes red instead of
-# quietly inflating the pass rate.
+# Exact case counts at the pinned commit. All three test runners re-assert
+# these before grading, so a narrowed or half-cloned corpus goes red
+# instead of quietly inflating the pass rate.
 EXPECT_Y=95    # y_ : MUST be accepted
 EXPECT_N=188   # n_ : MUST be rejected
 EXPECT_I=35    # i_ : implementation-defined

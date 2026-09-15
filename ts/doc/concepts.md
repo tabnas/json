@@ -132,14 +132,15 @@ instance state. So the instance is safe to share and reusing it avoids
 paying the build cost on every call. `make` exists for when you need a
 *configured* instance instead of the shared default.
 
-## TypeScript is canonical; Go tracks it
+## TypeScript is canonical; the ports track it
 
 The TS implementation in `ts/src/json.ts` is the source of truth; the Go
-port in `go/json.go` mirrors it line-for-line where it can. Both suites
-run the same conformance fixtures in `test/spec/*.tsv`
-(`valid.tsv` = input → expected output, `errors.tsv` = input →
-error code). The error **codes** are part of that shared contract: both
-runtimes must reject the same input with the same code. See the Go
+port in `go/json.go` and the Rust port in `rs/src/lib.rs` mirror it
+line-for-line where they can. All three suites run the same conformance
+fixtures in `test/spec/*.tsv` (`valid.tsv` = input → expected output,
+`errors.tsv` = input → error code). The error **codes** are part of that
+shared contract: every runtime must reject the same input with the same
+code. See the Go
 concepts doc's "Differences from the TS version" section for the small,
 unavoidable runtime differences.
 

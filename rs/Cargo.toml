@@ -1,0 +1,28 @@
+[package]
+name = "tabnas-json"
+version = "0.5.7"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT"
+description = "Standard JSON grammar plugin for the tabnas parsing engine"
+repository = "https://github.com/tabnas/json"
+
+[lib]
+name = "tabnas_json"
+path = "src/lib.rs"
+
+[dependencies]
+# The engine is consumed as a SIBLING CHECKOUT, the standard tabnas
+# development model: clone https://github.com/tabnas/parser next to this
+# repo. The `tabnas` crate is not published, so there is no registry
+# version to fall back on.
+tabnas = { path = "../../parser/rs" }
+regex = "1.10"
+serde_json = { version = "1.0", features = ["preserve_order"] }
+
+[dev-dependencies]
+# The parity runner holds this port to its PLATFORM ORACLE, the way the Go
+# runner holds that port to encoding/json: every `valid.tsv` row is parsed
+# by serde_json too and the two results must agree. That is also what makes
+# the number-range rejection below testable rather than asserted.
+serde_json = { version = "1.0", features = ["preserve_order"] }
