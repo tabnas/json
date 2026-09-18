@@ -272,3 +272,108 @@ func TestNumberOverflowRejected(t *testing.T) {
 		}
 	}
 }
+
+// pushChainOf reads push$.chain off the given `elem` close alt of the
+// grammar INSTALLED on j, and reports whether the alt carries it at all.
+func pushChainOf(t *testing.T, j *tabnas.Tabnas, i int) (chain bool, set bool) {
+	t.Helper()
+	elem := j.RSM()["elem"]
+	if elem == nil {
+		t.Fatalf("engine has no elem rule")
+	}
+	alts := elem.CloseAlts()
+	if len(alts) <= i {
+		t.Fatalf("elem has %d close alts, wanted index %d", len(alts), i)
+	}
+	k := alts[i].K
+	if k == nil {
+		return false, false
+	}
+	cfg, ok := k["push$"].(map[string]any)
+	if !ok {
+		t.Fatalf("elem close alt %d has K but no push$ config: %#v", i, k)
+	}
+	v, ok := cfg["chain"]
+	if !ok {
+		return false, false
+	}
+	b, ok := v.(bool)
+	if !ok {
+		t.Fatalf("elem close alt %d push$.chain is %T, wanted bool", i, v)
+	}
+	return b, true
+}
+
+// The reusable core is the entry point other plugins layer on, and
+// push$.chain: false is a claim about the ASSEMBLED grammar -- that
+// nothing in it resolves $prev to read a rule `R: "elem"` replaced. The
+// core cannot make that claim for rules it has never seen, so bare
+// RegisterJSONGrammar must leave the key off and let the engine walk.
+//
+// These read the installed grammar back rather than compare parses,
+// because the pinned engine release ignores push$.chain: both grammars
+// parse identically today. They stop being identical the moment go.mod
+// moves to a release that honours the key, which is exactly when a
+// layered plugin reading $prev would start getting a silent wrong answer
+// in Go and the right one in TypeScript and Rust.
+func TestRulesOnlyInstallerLeavesTheChainWalkOn(t *testing.T) {
+	j := tabnas.Make(tabnas.Options{})
+	if err := RegisterJSONGrammar(j); err != nil {
+		t.Fatalf("RegisterJSONGrammar: %v", err)
+	}
+	for i := range 2 {
+		if _, set := pushChainOf(t, j, i); set {
+			t.Errorf("elem close alt %d: the layerable core must not set push$.chain", i)
+		}
+	}
+}
+
+// A layering plugin that knows its own rules never read a replaced rule
+// can still ask for the optimization. This is the opt-in half of the same
+// contract, and the shape Json uses.
+func TestRulesOnlyInstallerHonoursChainOff(t *testing.T) {
+	j := tabnas.Make(tabnas.Options{})
+	if err := RegisterJSONGrammar(j, GrammarOptions{ChainOff: true}); err != nil {
+		t.Fatalf("RegisterJSONGrammar: %v", err)
+	}
+	for i := range 2 {
+		chain, set := pushChainOf(t, j, i)
+		if !set {
+			t.Errorf("elem close alt %d: ChainOff did not set push$.chain", i)
+			continue
+		}
+		if chain {
+			t.Errorf("elem close alt %d: push$.chain is true, wanted false", i)
+		}
+	}
+}
+
+// Json IS the assembled grammar -- these rules are all the rules, and
+// none of them reads a replaced rule -- so it is the one caller that can
+// honestly opt in, and it does. Wiring Json back to the bare installer
+// would silently hand the shipped parser its O(elements^2) walk again;
+// this fails instead of only a benchmark moving.
+func TestJsonPluginOptsOutOfTheChainWalk(t *testing.T) {
+	j := tabnas.Make(tabnas.Options{})
+	if err := Json(j, nil); err != nil {
+		t.Fatalf("Json: %v", err)
+	}
+	for i := range 2 {
+		chain, set := pushChainOf(t, j, i)
+		if !set {
+			t.Errorf("elem close alt %d: Json did not opt out of the chain walk", i)
+			continue
+		}
+		if chain {
+			t.Errorf("elem close alt %d: push$.chain is true, wanted false", i)
+		}
+	}
+	// And it still parses a list, opt-out and all.
+	got, err := j.Parse(`[1,2,3]`)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if want := `[1,2,3]`; canon(t, got) != want {
+		t.Errorf("Json parse = %s, want %s", canon(t, got), want)
+	}
+}

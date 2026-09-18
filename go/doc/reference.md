@@ -68,8 +68,9 @@ error while editing the grammar, not reachable at runtime.)
 ### `func Json(j *tabnas.Tabnas, _ map[string]any) error`
 
 The standard plugin form. Applies the strict JSON options
-(`j.SetOptions(jsonOptions())`) and then calls `RegisterJSONGrammar(j)`.
-Returns any error from grammar registration. Install it on a bare engine
+(`j.SetOptions(jsonOptions())`) and then calls
+`RegisterJSONGrammar(j, GrammarOptions{ChainOff: true})`. Returns any
+error from grammar registration. Install it on a bare engine
 with `Use`:
 
 ```go
@@ -78,7 +79,7 @@ if err := j.Use(tabnasjson.Json); err != nil { /* ... */ }
 v, err := j.Parse(`[1,2,3]`)
 ```
 
-### `func RegisterJSONGrammar(j *tabnas.Tabnas) error`
+### `func RegisterJSONGrammar(j *tabnas.Tabnas, extra ...GrammarOptions) error`
 
 Installs only the rule set (`val` / `map` / `list` / `pair` / `elem`) on
 `j` via the engine's declarative grammar spec
@@ -87,6 +88,37 @@ apply the strict lexer options, so use it to layer the JSON rules under
 your own configuration. Returns any error from the grammar spec. The value
 tree is built entirely by the engine's `$`-builtin actions; there are no
 grammar-local closures.
+
+The variadic argument is the `Make(extra ...tabnas.Options)` shape used
+elsewhere here: only the first is read, and no argument at all installs
+the layerable grammar.
+
+### `type GrammarOptions struct`
+
+One field, `ChainOff bool`, whose zero value is the safe default.
+
+`ChainOff: true` sets the engine's `push$.chain: false` on the two `elem`
+close alternates, which stops `@push$` re-publishing the grown list back
+along the `R: "elem"` replacement chain. It is a claim about the
+**assembled** grammar: that no rule in it resolves `$prev` to read a rule
+that `R: "elem"` replaced. The JSON core never does, but a plugin layering
+its own alternates onto `elem` or `list` might, and only that plugin
+knows. So this installer, the one built to be layered on, leaves the claim
+unmade, and `Json`, the parser nobody has extended, is what turns it on.
+Pass it yourself only if your own rules never read a replaced rule.
+
+This is the port the flag matters in, both ways. A Go list is a slice
+value, so each replaced rule holds its own header: the walk it skips is
+quadratic in the element count, and a wrong claim silently gives a layered
+plugin a stale list where TypeScript and Rust give it the live one. Those
+two hand out one array object that every view already shares, so there the
+same key is a no-op. The grammars are kept in step across the three ports,
+so the flag is declared in all of them.
+
+`push$.chain` arrives in the engine after the release `go.mod` currently
+requires. An engine that predates it ignores the key rather than
+rejecting it, so `ChainOff` is inert, not an error, until that
+requirement moves.
 
 ### `const VERSION string`
 

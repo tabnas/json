@@ -112,6 +112,26 @@ func jsonOptions() tabnas.Options {
 	}
 }
 
+// GrammarOptions tunes the grammar RegisterJSONGrammar installs. The
+// zero value installs the layerable grammar, which is the safe default.
+type GrammarOptions struct {
+	// ChainOff declares that no rule in the ASSEMBLED grammar resolves
+	// $prev, so @push$ need not re-publish the grown list back along the
+	// `R: "elem"` replacement chain. It is the engine's `push$.chain`
+	// config key, spelled as an opt-in so the zero value stays safe.
+	//
+	// The JSON core never reads a replaced rule, but a plugin layering
+	// its own alternates onto elem or list might, and only that plugin
+	// knows. So the core cannot make the claim on its behalf: it is off
+	// here and Json, the parser nobody has extended, is what turns it on.
+	//
+	// This is where a Go list is a slice VALUE, so every replaced rule
+	// holds its own header and the walk this skips is O(elements^2). The
+	// TypeScript and Rust ports hand out one array object that every view
+	// already shares, so there the same key is a no-op.
+	ChainOff bool
+}
+
 // RegisterJSONGrammar installs the standard JSON rule set (val / map /
 // list / pair / elem) on j via the engine's declarative grammar spec —
 // the same shape as the TypeScript registerJsonGrammar. Exposed
@@ -137,7 +157,27 @@ func jsonOptions() tabnas.Options {
 //	@setval$ — assign the just-built child value into the object under the captured key.
 //	@push$   — append the just-built child value to the array.
 //	@value$  — resolve the rule's value: a built child wins, else the scalar token (a Text under info.Text).
-func RegisterJSONGrammar(j *tabnas.Tabnas) error {
+//
+// The variadic options are the Make(extra ...tabnas.Options) shape used
+// elsewhere here: the zero state, no argument at all, installs the
+// layerable grammar.
+func RegisterJSONGrammar(j *tabnas.Tabnas, extra ...GrammarOptions) error {
+	var opts GrammarOptions
+	if 0 < len(extra) {
+		opts = extra[0]
+	}
+
+	// Set on the two `elem` close alts only when asked for. A nil K is
+	// the engine default, which is the chain walk running. Each alt gets
+	// its OWN map: alt config is the engine's to read, and two alts
+	// sharing one map would make that an assumption rather than a fact.
+	pushK := func() map[string]any {
+		if !opts.ChainOff {
+			return nil
+		}
+		return map[string]any{"push$": map[string]any{"chain": false}}
+	}
+
 	rules := map[string]*tabnas.GrammarRuleSpec{
 		// val: a value is a map, a list, or a plain scalar token. @reset$
 		// clears the parent-seeded node so a scalar doesn't inherit the
@@ -191,11 +231,14 @@ func RegisterJSONGrammar(j *tabnas.Tabnas) error {
 				{P: "val", G: "list,elem,val,json"},
 			},
 			Close: []*tabnas.GrammarAltSpec{
-				{S: "#CA", R: "elem", A: "@push$",
-					K: map[string]any{"push$": map[string]any{"chain": false}},
+				// `R: "elem"` REPLACES this rule, so the rule it displaces
+				// keeps its own view of the list -- a Go slice header that
+				// stops growing with it. That is what GrammarOptions.ChainOff
+				// is a claim about, and why only the assembled grammar can
+				// make it.
+				{S: "#CA", R: "elem", A: "@push$", K: pushK(),
 					G: "list,elem,comma,json"},
-				{S: "#CS", B: 1, A: "@push$",
-					K: map[string]any{"push$": map[string]any{"chain": false}},
+				{S: "#CS", B: 1, A: "@push$", K: pushK(),
 					G: "list,elem,close,json"},
 			},
 		},
@@ -220,7 +263,10 @@ func RegisterJSONGrammar(j *tabnas.Tabnas) error {
 // register the JSON grammar. Use it on a bare engine, or call Make.
 func Json(j *tabnas.Tabnas, _ map[string]any) error {
 	j.SetOptions(jsonOptions())
-	return RegisterJSONGrammar(j)
+	// The complete parser: these rules are the whole grammar, and none of
+	// them reads a replaced rule. That is what makes ChainOff true here
+	// and false in the rules-only installer above.
+	return RegisterJSONGrammar(j, GrammarOptions{ChainOff: true})
 }
 
 // Make builds a standard-JSON parser instance, optionally layering extra
