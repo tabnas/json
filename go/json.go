@@ -112,6 +112,20 @@ func jsonOptions() tabnas.Options {
 	}
 }
 
+// installGrammar is (*tabnas.Tabnas).Grammar, indirected so a test can
+// see the spec this package hands the engine.
+//
+// It has to be asked at this end. The engine BINDS builtin config at
+// spec load and then drops the consumed keys from the alternate's keep
+// bag, so that config does not merge into r.K on every match (parser's
+// A1). An installed grammar therefore cannot be asked what `push$`
+// config it was given: reading it back off `RSM()["elem"].CloseAlts()`
+// returns nothing, and returns the key only against an engine too old
+// to recognise it, which is residue rather than an answer.
+var installGrammar = func(j *tabnas.Tabnas, gs *tabnas.GrammarSpec) error {
+	return j.Grammar(gs)
+}
+
 // GrammarOptions tunes the grammar RegisterJSONGrammar installs. The
 // zero value installs the layerable grammar, which is the safe default.
 type GrammarOptions struct {
@@ -252,7 +266,7 @@ func RegisterJSONGrammar(j *tabnas.Tabnas, extra ...GrammarOptions) error {
 	//
 	// The names are written in the order the `rules` literal above declares
 	// them, which is the order ts/src/json.ts declares them in.
-	return j.Grammar(&tabnas.GrammarSpec{
+	return installGrammar(j, &tabnas.GrammarSpec{
 		V:         2,
 		Rule:      rules,
 		RuleOrder: []string{"val", "map", "list", "pair", "elem"},

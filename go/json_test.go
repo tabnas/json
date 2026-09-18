@@ -273,15 +273,43 @@ func TestNumberOverflowRejected(t *testing.T) {
 	}
 }
 
-// pushChainOf reads push$.chain off the given `elem` close alt of the
-// grammar INSTALLED on j, and reports whether the alt carries it at all.
-func pushChainOf(t *testing.T, j *tabnas.Tabnas, i int) (chain bool, set bool) {
+// captureGrammar runs install against a real engine and returns the spec
+// this package handed the engine, by swapping the installGrammar seam.
+// Not parallel-safe, which is why nothing here calls t.Parallel.
+func captureGrammar(t *testing.T, install func(*tabnas.Tabnas) error) *tabnas.GrammarSpec {
 	t.Helper()
-	elem := j.RSM()["elem"]
-	if elem == nil {
-		t.Fatalf("engine has no elem rule")
+	var got *tabnas.GrammarSpec
+	prev := installGrammar
+	installGrammar = func(j *tabnas.Tabnas, gs *tabnas.GrammarSpec) error {
+		got = gs
+		return prev(j, gs)
 	}
-	alts := elem.CloseAlts()
+	defer func() { installGrammar = prev }()
+
+	if err := install(tabnas.Make(tabnas.Options{})); err != nil {
+		t.Fatalf("install: %v", err)
+	}
+	if got == nil {
+		t.Fatalf("nothing was installed")
+	}
+	return got
+}
+
+// pushChainOf reads push$.chain off the given `elem` close alt of a
+// grammar spec, and reports whether the alt carries it at all.
+func pushChainOf(t *testing.T, spec *tabnas.GrammarSpec, i int) (chain bool, set bool) {
+	t.Helper()
+	elem := spec.Rule["elem"]
+	if elem == nil {
+		t.Fatalf("spec has no elem rule")
+	}
+	// GrammarRuleSpec.Close is `any` -- a slice or an alt-list spec. This
+	// grammar writes the slice; anything else is a shape change that
+	// should stop here rather than be skipped over.
+	alts, ok := elem.Close.([]*tabnas.GrammarAltSpec)
+	if !ok {
+		t.Fatalf("elem.Close is %T, wanted []*tabnas.GrammarAltSpec", elem.Close)
+	}
 	if len(alts) <= i {
 		t.Fatalf("elem has %d close alts, wanted index %d", len(alts), i)
 	}
@@ -310,34 +338,32 @@ func pushChainOf(t *testing.T, j *tabnas.Tabnas, i int) (chain bool, set bool) {
 // core cannot make that claim for rules it has never seen, so bare
 // RegisterJSONGrammar must leave the key off and let the engine walk.
 //
-// These read the installed grammar back rather than compare parses,
-// because the pinned engine release ignores push$.chain: both grammars
-// parse identically today. They stop being identical the moment go.mod
-// moves to a release that honours the key, which is exactly when a
-// layered plugin reading $prev would start getting a silent wrong answer
-// in Go and the right one in TypeScript and Rust.
+// These assert on what is handed to the engine rather than on a parse.
+// The engine release go.mod pins ignores push$.chain, so both grammars
+// parse identically today; they stop being identical the moment that
+// requirement moves, which is exactly when a layered plugin reading
+// $prev would start getting a silent wrong answer in Go and the right
+// one in TypeScript and Rust.
 func TestRulesOnlyInstallerLeavesTheChainWalkOn(t *testing.T) {
-	j := tabnas.Make(tabnas.Options{})
-	if err := RegisterJSONGrammar(j); err != nil {
-		t.Fatalf("RegisterJSONGrammar: %v", err)
-	}
+	spec := captureGrammar(t, func(j *tabnas.Tabnas) error {
+		return RegisterJSONGrammar(j)
+	})
 	for i := range 2 {
-		if _, set := pushChainOf(t, j, i); set {
+		if _, set := pushChainOf(t, spec, i); set {
 			t.Errorf("elem close alt %d: the layerable core must not set push$.chain", i)
 		}
 	}
 }
 
 // A layering plugin that knows its own rules never read a replaced rule
-// can still ask for the optimization. This is the opt-in half of the same
-// contract, and the shape Json uses.
+// can still ask for the optimization. This is the opt-in half of the
+// same contract, and the shape Json uses.
 func TestRulesOnlyInstallerHonoursChainOff(t *testing.T) {
-	j := tabnas.Make(tabnas.Options{})
-	if err := RegisterJSONGrammar(j, GrammarOptions{ChainOff: true}); err != nil {
-		t.Fatalf("RegisterJSONGrammar: %v", err)
-	}
+	spec := captureGrammar(t, func(j *tabnas.Tabnas) error {
+		return RegisterJSONGrammar(j, GrammarOptions{ChainOff: true})
+	})
 	for i := range 2 {
-		chain, set := pushChainOf(t, j, i)
+		chain, set := pushChainOf(t, spec, i)
 		if !set {
 			t.Errorf("elem close alt %d: ChainOff did not set push$.chain", i)
 			continue
@@ -354,12 +380,11 @@ func TestRulesOnlyInstallerHonoursChainOff(t *testing.T) {
 // would silently hand the shipped parser its O(elements^2) walk again;
 // this fails instead of only a benchmark moving.
 func TestJsonPluginOptsOutOfTheChainWalk(t *testing.T) {
-	j := tabnas.Make(tabnas.Options{})
-	if err := Json(j, nil); err != nil {
-		t.Fatalf("Json: %v", err)
-	}
+	spec := captureGrammar(t, func(j *tabnas.Tabnas) error {
+		return Json(j, nil)
+	})
 	for i := range 2 {
-		chain, set := pushChainOf(t, j, i)
+		chain, set := pushChainOf(t, spec, i)
 		if !set {
 			t.Errorf("elem close alt %d: Json did not opt out of the chain walk", i)
 			continue
@@ -369,6 +394,10 @@ func TestJsonPluginOptsOutOfTheChainWalk(t *testing.T) {
 		}
 	}
 	// And it still parses a list, opt-out and all.
+	j := tabnas.Make(tabnas.Options{})
+	if err := Json(j, nil); err != nil {
+		t.Fatalf("Json: %v", err)
+	}
 	got, err := j.Parse(`[1,2,3]`)
 	if err != nil {
 		t.Fatalf("parse: %v", err)
