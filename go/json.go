@@ -191,8 +191,12 @@ func RegisterJSONGrammar(j *tabnas.Tabnas) error {
 				{P: "val", G: "list,elem,val,json"},
 			},
 			Close: []*tabnas.GrammarAltSpec{
-				{S: "#CA", R: "elem", A: "@push$", G: "list,elem,comma,json"},
-				{S: "#CS", B: 1, A: "@push$", G: "list,elem,close,json"},
+				{S: "#CA", R: "elem", A: "@push$",
+					K: map[string]any{"push$": map[string]any{"chain": false}},
+					G: "list,elem,comma,json"},
+				{S: "#CS", B: 1, A: "@push$",
+					K: map[string]any{"push$": map[string]any{"chain": false}},
+					G: "list,elem,close,json"},
 			},
 		},
 	}

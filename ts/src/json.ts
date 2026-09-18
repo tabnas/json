@@ -182,10 +182,20 @@ export function registerJsonGrammar(tn: Tabnas): void {
         ],
         close: [
           // Next element. @push$ appends the element.
-          { s: '#CA', r: 'elem', a: '@push$', g: 'list,elem,comma,json' },
+          //
+          // `chain: false` says this grammar never reads a rule that has
+          // been replaced, so @push$ need not re-publish the grown list
+          // back along the `r: 'elem'` chain. It is a no-op here and in
+          // the Rust port, which hand out the same array object; the Go
+          // port is the one where a list is a VALUE and that walk is
+          // O(elements^2). Declared in all three so the grammar stays
+          // one grammar.
+          { s: '#CA', r: 'elem', a: '@push$',
+            k: { push$: { chain: false } }, g: 'list,elem,comma,json' },
 
           // End of list.
-          { s: '#CS', b: 1, a: '@push$', g: 'list,elem,close,json' },
+          { s: '#CS', b: 1, a: '@push$',
+            k: { push$: { chain: false } }, g: 'list,elem,close,json' },
         ],
       },
     },

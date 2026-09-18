@@ -285,8 +285,12 @@ fn json_document() -> serde_json::Value {
             "elem": {
                 "open": [ { "p": "val", "g": "list,elem,val,json" } ],
                 "close": [
-                    { "s": "#CA", "r": "elem", "a": "@push$", "g": "list,elem,comma,json" },
-                    { "s": "#CS", "b": 1, "a": "@push$", "g": "list,elem,close,json" },
+                    { "s": "#CA", "r": "elem", "a": "@push$",
+                      "k": { "push$": { "chain": false } },
+                      "g": "list,elem,comma,json" },
+                    { "s": "#CS", "b": 1, "a": "@push$",
+                      "k": { "push$": { "chain": false } },
+                      "g": "list,elem,close,json" },
                 ],
             },
         },
