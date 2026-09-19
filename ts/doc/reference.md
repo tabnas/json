@@ -67,7 +67,7 @@ const p = make({ info: { map: true, list: true, text: true } })
 
 The standard plugin form, `function json(tn, _options?)`. Applies the
 strict JSON options (`tn.options(JSON_OPTIONS)`) and then calls
-`registerJsonGrammar(tn)`. Use it on a bare engine:
+`registerJsonGrammar(tn, { chainOff: true })`. Use it on a bare engine:
 
 ```js
 const { Tabnas } = require('@tabnas/parser')
@@ -75,7 +75,7 @@ const { json } = require('@tabnas/json')
 const tn = new Tabnas({ plugins: [json] })
 ```
 
-### `registerJsonGrammar(tn: Tabnas): void`
+### `registerJsonGrammar(tn: Tabnas, opts?: JsonGrammarOptions): void`
 
 Installs only the rule set (`val` / `map` / `list` / `pair` / `elem`) on
 `tn` via the engine's declarative grammar spec (`tn.grammar({ v: 2, rule
@@ -83,6 +83,28 @@ Installs only the rule set (`val` / `map` / `list` / `pair` / `elem`) on
 the JSON rules under your own configuration. The value tree is built
 entirely by the engine's `$`-builtin actions; there are no
 grammar-local closures.
+
+### `JsonGrammarOptions`
+
+One optional field, `chainOff?: boolean`, defaulting to off.
+
+`chainOff: true` sets the engine's `push$.chain: false` on the two `elem`
+close alternates, which stops `@push$` re-publishing the grown list back
+along the `r: 'elem'` replacement chain. It is a claim about the
+**assembled** grammar: that no rule in it resolves `$prev` to read a rule
+that `r: 'elem'` replaced. The JSON core never does, but a plugin layering
+its own alternates onto `elem` or `list` might, and only that plugin
+knows. So this installer, the one built to be layered on, leaves the claim
+unmade, and the complete `json` plugin, the parser nobody has extended, is
+what turns it on. Pass it yourself only if your own rules never read a
+replaced rule.
+
+The flag is a no-op in this runtime: an array here is one object that
+every view of the list already shares. It is the Go port that a wrong
+claim gives a wrong answer, because there a list is a slice value, and the
+Go port where it buys anything, because there the walk it skips is
+quadratic in the element count. The grammars are kept in step across the
+three ports, so the flag is declared in all of them.
 
 ### `VERSION: string`
 

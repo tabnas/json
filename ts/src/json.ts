@@ -64,11 +64,39 @@ const JSON_OPTIONS = {
   tokenSet: { KEY: ['#ST', null, null, null] },
 }
 
+// Options for `registerJsonGrammar`. The zero state -- no argument at
+// all -- installs the layerable grammar, which is the safe default.
+export interface JsonGrammarOptions {
+  // Declare that no rule in the ASSEMBLED grammar resolves `$prev`, so
+  // `@push$` need not re-publish the grown list back along the
+  // `r: 'elem'` replacement chain. The JSON core never reads a replaced
+  // rule, but a plugin layering its own alternates onto `elem` or `list`
+  // might, and only that plugin knows. So the core cannot make the claim
+  // on its behalf: it is off here and the complete `json` plugin -- the
+  // parser nobody has extended -- is what turns it on.
+  //
+  // A no-op in this runtime and in Rust, which hand out one array object
+  // that every view of the list already shares. It matters in Go, where a
+  // list is a slice VALUE and the walk it skips is O(elements^2).
+  chainOff?: boolean
+}
+
 // Install the pure JSON rule set (val / map / list / pair / elem) on the
 // given engine instance. Exposed separately from the options so other
 // grammar plugins can layer their extensions on top without re-declaring
 // the JSON core. This is jsonic's "Plain JSON" grammar.
-export function registerJsonGrammar(tn: Tabnas): void {
+export function registerJsonGrammar(
+  tn: Tabnas,
+  opts?: JsonGrammarOptions,
+): void {
+  // Spread onto the two `elem` close alts. Nothing is emitted unless
+  // asked for, and an absent `k` is the engine default: the walk runs.
+  // Called per alt so each gets its OWN object, as the two literals it
+  // replaces did: alt config is the engine's to read, and two alts
+  // sharing one object would make that an assumption rather than a fact.
+  const pushChain = () =>
+    opts?.chainOff ? { k: { push$: { chain: false } } } : {}
+
   tn.grammar({
     // The schema version of the native-value builtins this grammar binds
     // to (object/array/reset/key/setval/push/value).
@@ -181,11 +209,16 @@ export function registerJsonGrammar(tn: Tabnas): void {
           { p: 'val', g: 'list,elem,val,json' },
         ],
         close: [
-          // Next element. @push$ appends the element.
-          { s: '#CA', r: 'elem', a: '@push$', g: 'list,elem,comma,json' },
+          // Next element. @push$ appends the element. `r: 'elem'`
+          // REPLACES this rule, so the rule it displaces keeps its own
+          // view of the list -- which is why `chainOff` is a claim only
+          // the assembled grammar can make. See JsonGrammarOptions.
+          { s: '#CA', r: 'elem', a: '@push$',
+            ...pushChain(), g: 'list,elem,comma,json' },
 
           // End of list.
-          { s: '#CS', b: 1, a: '@push$', g: 'list,elem,close,json' },
+          { s: '#CS', b: 1, a: '@push$',
+            ...pushChain(), g: 'list,elem,close,json' },
         ],
       },
     },
@@ -196,7 +229,10 @@ export function registerJsonGrammar(tn: Tabnas): void {
 // the JSON grammar. `use` this on a bare engine, or pass it to `make`.
 export const json: Plugin = function json(tn: Tabnas, _options?: any) {
   tn.options(JSON_OPTIONS)
-  registerJsonGrammar(tn)
+  // The complete parser: these rules are the whole grammar, and none of
+  // them reads a replaced rule. That is what makes `chainOff` true here
+  // and false in the rules-only installer above.
+  registerJsonGrammar(tn, { chainOff: true })
 }
 
 // Create a standard-JSON parser instance: a tabnas engine with the json

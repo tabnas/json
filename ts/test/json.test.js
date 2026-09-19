@@ -128,4 +128,63 @@ describe('json', () => {
       assert.throws(() => JSON.parse(bad), `JSON.parse accepts: ${bad}`)
     }
   })
+
+  // Capture the grammar spec an installer hands the engine, without
+  // reaching into engine internals. registerJsonGrammar touches nothing
+  // but `grammar`; the json plugin also calls `options`.
+  const capture = (install) => {
+    let spec
+    install({ grammar: (s) => { spec = s }, options: () => {} })
+    return spec
+  }
+
+  const pushChainOf = (spec, i) => spec.rule.elem.close[i].k?.push$?.chain
+
+  // `chain: false` is a claim about the ASSEMBLED grammar -- that nothing
+  // in it resolves `$prev` to read a rule `r: 'elem'` replaced.
+  // registerJsonGrammar is the entry point other plugins layer on, so it
+  // cannot make that claim for rules it has never seen: the key must be
+  // absent unless the caller asks, and an absent key is the engine
+  // default, the chain walk running.
+  //
+  // This asserts on the declared grammar rather than on a parse because
+  // the key is a NO-OP in this runtime: an array here is one object that
+  // every view of the list already shares. It is Go, where a list is a
+  // slice value, that gets a different answer -- so the grammar is what
+  // has to be right, in the port the grammar is canonical in.
+  it('the layerable core leaves the chain walk on', () => {
+    const spec = capture((tn) => registerJsonGrammar(tn))
+    for (const i of [0, 1]) {
+      assert.strictEqual(pushChainOf(spec, i), undefined,
+        `elem close alt ${i} must not set push$.chain`)
+    }
+  })
+
+  // A layering plugin that knows its own rules never read a replaced rule
+  // can still ask for it. The opt-in half of the same contract.
+  it('the layerable core honours chainOff', () => {
+    const spec = capture((tn) => registerJsonGrammar(tn, { chainOff: true }))
+    for (const i of [0, 1]) {
+      assert.strictEqual(pushChainOf(spec, i), false,
+        `elem close alt ${i} should carry push$.chain: false`)
+    }
+  })
+
+  // The json plugin IS the assembled grammar -- these rules are all the
+  // rules, and none reads a replaced rule -- so it is the one caller that
+  // can honestly opt in, and it does. Wiring it back to the bare
+  // installer would hand the shipped Go parser its O(elements^2) walk
+  // again; this fails instead of only a benchmark moving.
+  it('the json plugin opts out of the chain walk', () => {
+    const spec = capture((tn) => json(tn))
+    for (const i of [0, 1]) {
+      assert.strictEqual(pushChainOf(spec, i), false,
+        `elem close alt ${i} should carry push$.chain: false`)
+    }
+    // And both constructions still parse a list the same way.
+    const bare = new Tabnas()
+    registerJsonGrammar(bare)
+    assert.deepStrictEqual(norm(bare.parse('[1,2,3]')), [1, 2, 3])
+    assert.deepStrictEqual(norm(parse('[1,2,3]')), [1, 2, 3])
+  })
 })

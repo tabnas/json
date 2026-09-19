@@ -184,6 +184,23 @@ first.
    nobody had bound. Layer on the Rust core by installing `json` and then
    relaxing what you need with `set_options`.
 
+   **A claim about the assembled grammar is not the core's to make.**
+   `push$.chain: false` on the two `elem` close alts says no rule
+   ANYWHERE in the grammar resolves `$prev` to read a rule that the
+   `elem` replacement displaced. The JSON rules never do, but a plugin
+   layering its own alternates onto `elem` or `list` might, and only that
+   plugin knows — so the rules-only installers leave the key off and the
+   complete `json` / `Json` plugin, which IS the whole grammar, opts in
+   (`{ chainOff: true }` in TS, `GrammarOptions{ChainOff: true}` in Go).
+   Rust declares it unconditionally: it has no rules-only entry point, so
+   its grammar is already the assembled one. Getting this wrong is
+   silent — the key is a no-op in TS and Rust, which share one array
+   object, and only Go, where a list is a slice VALUE, both pays the
+   O(elements^2) walk and hands a layered plugin a stale list. Pinned by
+   `TestRulesOnlyInstallerLeavesTheChainWalkOn` and its two neighbours in
+   each port, and by the `push-chain-off` row in the engine's own
+   `test/spec/divergent.tsv`.
+
 ## Public API
 
 The TS surface (`src/json.ts`), the Go surface (`json.go`) and the Rust

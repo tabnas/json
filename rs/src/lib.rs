@@ -282,11 +282,27 @@ fn json_document() -> serde_json::Value {
                     { "s": "#CB", "b": 1, "a": "@setval$", "g": "map,pair,close,json" },
                 ],
             },
+            // `"r": "elem"` REPLACES this rule, and `push$.chain: false`
+            // says no rule in the assembled grammar will resolve `$prev`
+            // to read the rule it displaced. It is unconditional here,
+            // where the TypeScript and Go ports make it an opt-in their
+            // rules-only installers leave off: this port has no such
+            // installer (see `json`'s docs), so this grammar IS the
+            // assembled grammar and the claim is the port's to make.
+            //
+            // It buys nothing either way. A list here is one shared
+            // array that every view already sees grow; the walk it skips
+            // is O(elements^2) only in Go, where a list is a slice VALUE.
+            // The key is declared so the three grammars stay one grammar.
             "elem": {
                 "open": [ { "p": "val", "g": "list,elem,val,json" } ],
                 "close": [
-                    { "s": "#CA", "r": "elem", "a": "@push$", "g": "list,elem,comma,json" },
-                    { "s": "#CS", "b": 1, "a": "@push$", "g": "list,elem,close,json" },
+                    { "s": "#CA", "r": "elem", "a": "@push$",
+                      "k": { "push$": { "chain": false } },
+                      "g": "list,elem,comma,json" },
+                    { "s": "#CS", "b": 1, "a": "@push$",
+                      "k": { "push$": { "chain": false } },
+                      "g": "list,elem,close,json" },
                 ],
             },
         },
