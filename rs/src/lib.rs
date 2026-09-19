@@ -33,7 +33,7 @@ use tabnas::{Context, GrammarError, GrammarSpec, LexCheckResult, Tabnas, Value};
 /// release orchestrator rewrites both, and `tests/version_test.rs` fails
 /// the build if they drift. Mirrors `VERSION` in `ts/src/json.ts` and
 /// `const VERSION` in `go/json.go`.
-pub const VERSION: &str = "0.5.7";
+pub const VERSION: &str = "0.5.8";
 
 /// The error a failed parse produces, re-exported so callers need not
 /// depend on the engine crate directly. Mirrors the TypeScript
