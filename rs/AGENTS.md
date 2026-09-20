@@ -157,7 +157,10 @@ the prose gate cover them. Two consequences when editing them:
 
 `make test-rs` is the fast loop. `ci/rust/run.sh` is the full gate and is
 what CI would run: it adds `cargo fmt --check`, a build, doctests, the
-lockfile check and the MSRV pin. The engine must be a sibling checkout at
+lockfile check and the MSRV pin. The doctests include `README.md` through
+a `#[cfg(doctest)]` include in `src/lib.rs`, so every `rust` fence in the
+README is compiled and run as written: keep each one a complete `fn main`
+example. The engine must be a sibling checkout at
 `../../parser`.
 
 For the docs, run both halves from the repo root:

@@ -29,6 +29,13 @@ use regex::Regex;
 use serde_json::json;
 use tabnas::{Context, GrammarError, GrammarSpec, LexCheckResult, Tabnas, Value};
 
+/// The README's Rust examples run as doctests, so a stale one fails the
+/// gate rather than misleading the reader. Its `toml` and `bash` fences
+/// are skipped; rustdoc runs only the `rust` ones.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+mod readme_examples {}
+
 /// This crate's version. It MUST equal `ts/package.json` "version": the
 /// release orchestrator rewrites both, and `tests/version_test.rs` fails
 /// the build if they drift. Mirrors `VERSION` in `ts/src/json.ts` and

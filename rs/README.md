@@ -30,14 +30,22 @@ the Go port has the equivalent set in [`../go/doc/`](../go/doc/).
 ## Use
 
 ```rust
-let value = tabnas_json::parse(r#"{"a":[1,2]}"#)?;
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let value = tabnas_json::parse(r#"{"a":[1,2]}"#)?;
+    println!("{value}");
+    Ok(())
+}
 ```
 
 Or build an instance and reuse it:
 
 ```rust
-let parser = tabnas_json::make();
-let value = parser.parse("[1,2,3]")?;
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let parser = tabnas_json::make();
+    let value = parser.parse("[1,2,3]")?;
+    println!("{value}");
+    Ok(())
+}
 ```
 
 To layer another grammar on the JSON core, install the plugin on your own
@@ -45,8 +53,11 @@ instance and add rules on top of the shared `val` / `map` / `list` /
 `pair` / `elem`:
 
 ```rust
-let mut parser = tabnas::Tabnas::new();
-tabnas_json::json(&mut parser)?;
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut parser = tabnas::Tabnas::new();
+    tabnas_json::json(&mut parser)?;
+    Ok(())
+}
 ```
 
 ## Install
