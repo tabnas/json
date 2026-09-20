@@ -175,6 +175,66 @@ fn rejects_nesting_deeper_than_its_platform_oracle() {
 }
 
 #[test]
+fn the_depth_boundary_does_not_depend_on_what_the_innermost_container_holds() {
+    // The test above nests EMPTY arrays, and that shape alone agreed with
+    // serde_json while every other one was off by a level: `[]` nested
+    // 127 deep parsed but `[1]` nested 127 deep answered `cancel`, and so
+    // did 127 nested objects, because the engine hands the budget check
+    // the rule it is inside separately from the ancestor stack, and only
+    // the ancestors were counted. An empty 127th container was the current
+    // rule, and uncounted; a scalar inside it saw all 127 as ancestors.
+    //
+    // serde_json's limit is a count of open containers, whatever they
+    // hold, so the boundary here has to be the same for every shape. Each
+    // shape is asserted against the oracle, not against the number.
+    fn wrap(open: &str, n: usize, inner: &str, close: &str) -> String {
+        format!("{}{inner}{}", open.repeat(n), close.repeat(n))
+    }
+    type Shape = fn(usize) -> String;
+    let shapes: [(&str, Shape); 7] = [
+        ("arrays around a scalar", |n| wrap("[", n, "1", "]")),
+        ("arrays around a string", |n| wrap("[", n, "\"x\"", "]")),
+        ("arrays around two elements", |n| wrap("[", n, "1,2", "]")),
+        ("objects around a scalar", |n| wrap("{\"a\":", n, "1", "}")),
+        // n containers in total: n - 1 objects plus the empty one inside.
+        ("objects around an empty object", |n| {
+            wrap("{\"a\":", n - 1, "{}", "}")
+        }),
+        ("arrays around an empty object", |n| {
+            wrap("[", n - 1, "{}", "]")
+        }),
+        // A sibling after the deep branch: the depth has to unwind.
+        ("a deep branch then a sibling", |n| {
+            format!("{{\"a\":{},\"b\":1}}", wrap("[", n - 1, "1", "]"))
+        }),
+    ];
+
+    for (name, shape) in &shapes {
+        let ok = shape(127);
+        assert!(
+            parse(&ok).is_ok(),
+            "{name}: 127 levels must parse: {:?}",
+            parse(&ok).err().map(|e| e.code)
+        );
+        assert!(
+            serde_json::from_str::<serde_json::Value>(&ok).is_ok(),
+            "{name}: serde_json must accept 127 levels too"
+        );
+
+        let deep = shape(128);
+        let error = parse(&deep).expect_err(&format!("{name}: 128 levels must be rejected"));
+        assert_eq!(
+            error.code, "cancel",
+            "{name}: the rejection is the budget's"
+        );
+        assert!(
+            serde_json::from_str::<serde_json::Value>(&deep).is_err(),
+            "{name}: serde_json must reject 128 levels too"
+        );
+    }
+}
+
+#[test]
 fn the_jsonc_recipe_takes_a_comment_against_a_number() {
     // The layering recipe the docs describe, with no space between the
     // number and the comment. That is the case the number preflight hook

@@ -44,8 +44,14 @@ of any replacement:
 
 Three details that look arbitrary and are not:
 
-- The predicate is `<`, not `<=`. The budget check runs at the top of an
-  iteration, before the rule for the token about to be read is pushed.
+- The predicate is `<=`, and the count includes the rule the loop is
+  inside. The engine hands the budget check that rule separately, as
+  `context.rule`, and `rule_stack` holds only its ancestors; a container
+  is open from the moment it is the current rule, so it is counted. When
+  only the ancestors were counted the boundary depended on what the
+  innermost container held: `[]` nested 127 deep parsed while `[1]`
+  nested 127 deep, and 127 nested objects, answered `cancel`, which
+  serde_json accepts. The suite measures every shape against the oracle.
 - Depth is counted from RULE NAMES, not `rule_stack.len()`. The stack
   holds about three rules per level, so a length limit would encode that
   ratio and shift the first time the grammar gains an alternate.

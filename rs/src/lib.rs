@@ -145,7 +145,7 @@ fn strict_number_check(src: &str) -> LexCheckResult {
 /// input must not be able to end the process.
 const DEPTH_LIMIT: usize = 127;
 
-/// How many open containers this parse is inside.
+/// How many containers are open at this point in the parse.
 ///
 /// Unlike the number check, the budget needs no name: `parse_budget`
 /// takes the closure directly, so there is nothing to bind by name and
@@ -157,25 +157,44 @@ const DEPTH_LIMIT: usize = 127;
 /// and shift silently the first time the grammar gains an alternate.
 /// Counting the container rules is the depth a reader of the document
 /// would count.
+///
+/// The rule the loop is working on is NOT in `rule_stack`: the engine
+/// hands it over separately as `context.rule`, and the stack holds only
+/// its ancestors. A container is open from the moment it is that rule,
+/// so it has to be counted too. Counting the ancestors alone made the
+/// boundary depend on what the innermost container held: `[]` nested 127
+/// deep parsed, because the 127th list was the current rule and went
+/// uncounted, while `[1]` nested 127 deep was refused, because by the
+/// time `1` was read all 127 lists were ancestors. serde_json accepts
+/// both, and `tests/json_test.rs` now measures both shapes against it.
 fn depth(context: &Context) -> usize {
-    context
+    let is_container = |name: &str| name == "map" || name == "list";
+    let ancestors = context
         .rule_stack
         .iter()
-        .filter(|rule| rule.name == "map" || rule.name == "list")
-        .count()
+        .filter(|rule| is_container(&rule.name))
+        .count();
+    let current = usize::from(
+        context
+            .rule
+            .as_ref()
+            .is_some_and(|rule| is_container(&rule.name)),
+    );
+    ancestors + current
 }
 
 /// The parse budget: stop before the nesting outruns the stack.
 ///
-/// Strictly less than, not at most. The check runs at the top of a parse
-/// iteration, BEFORE the rule for the token about to be read is pushed,
-/// so the count it sees is the depth already entered and the container
-/// being opened would make it one deeper. `<` is therefore what makes
-/// `DEPTH_LIMIT` mean "this many levels parse, the next one does not",
-/// which is the boundary `tests/json_test.rs` measures against
-/// serde_json rather than asserting from this reasoning.
+/// At most, not strictly less than. `depth` already includes the
+/// container the loop is inside, so the count it returns IS the nesting
+/// depth of the token about to be read, and `DEPTH_LIMIT` means "this
+/// many levels parse, the next one does not": the 128th container fails
+/// the check on the very iteration it becomes the current rule, whether
+/// it turns out to be empty or not. That is the boundary
+/// `tests/json_test.rs` measures against serde_json rather than
+/// asserting from this reasoning.
 fn within_depth_limit(context: &Context) -> bool {
-    depth(context) < DEPTH_LIMIT
+    depth(context) <= DEPTH_LIMIT
 }
 
 /// The one serialized document carrying both the strict-JSON options and
@@ -319,6 +338,14 @@ fn json_document() -> serde_json::Value {
 ///
 /// This is the one entry point: `make` goes through it too, so the two
 /// construction paths cannot drift apart.
+///
+/// ```
+/// let mut parser = tabnas::Tabnas::new();
+/// tabnas_json::json(&mut parser)?;
+/// let value = parser.parse("[1,2,3]")?;
+/// assert_eq!(value.to_string(), "[1,2,3]");
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
 pub fn json(parser: &mut Tabnas) -> Result<(), GrammarError> {
     parser.lex_check_ref(NUMBER_CHECK, strict_number_check);
     let spec = GrammarSpec::from_value(json_document())?;
@@ -342,6 +369,14 @@ pub fn json(parser: &mut Tabnas) -> Result<(), GrammarError> {
 /// cannot drift. The document is a fixed literal, so a failure here is a
 /// bug in this crate rather than anything a caller did — the Go `Make`
 /// panics for the same reason, with the same justification.
+///
+/// ```
+/// let parser = tabnas_json::make();
+/// let value = parser.parse("[1,2,3]")?;
+/// assert_eq!(value.to_string(), "[1,2,3]");
+/// assert!(parser.parse("[1,2,]").is_err());
+/// # Ok::<(), tabnas_json::JsonError>(())
+/// ```
 pub fn make() -> Tabnas {
     let mut parser = Tabnas::new();
     json(&mut parser).expect("the JSON grammar document is fixed and valid");
@@ -360,6 +395,13 @@ pub fn make() -> Tabnas {
 ///
 /// Use [`make`] instead when the parser needs configuring: that returns a
 /// fresh instance and leaves this one alone.
+///
+/// ```
+/// let value = tabnas_json::parse(r#"{"a":[1,2]}"#)?;
+/// assert_eq!(value.to_string(), r#"{"a":[1,2]}"#);
+/// assert_eq!(tabnas_json::parse("{a:1}").unwrap_err().code, "unexpected");
+/// # Ok::<(), tabnas_json::JsonError>(())
+/// ```
 pub fn parse(src: &str) -> Result<Value, JsonError> {
     static DEFAULT: OnceLock<Tabnas> = OnceLock::new();
     DEFAULT.get_or_init(make).parse(src)
