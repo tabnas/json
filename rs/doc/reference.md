@@ -283,12 +283,12 @@ that had not been bound. Install `json` and relax what you need with
 One consequence shows in the grammar. The other two ports make
 `push$.chain: false` on the `elem` close alternates an opt-in their
 rules-only installers leave off, because that key is a claim about the
-whole assembled grammar and a layerable core cannot make it for rules it
-has never seen. This port has no such core, so its grammar is the
-assembled grammar and the claim is the port's to make: the key is
-unconditional here. It buys nothing either way, since a list here is one
-shared array that every view already sees grow. It is declared so the
-three grammars stay one grammar.
+whole assembled grammar and a core that is layered under other rules
+cannot make it for rules it has never seen. This port has no such core,
+so its grammar is the assembled grammar and the claim is the port's to
+make: the key is unconditional here. It buys nothing either way, since a
+list here is one shared array that every view already sees grow. It is
+declared so the three grammars stay one grammar.
 
 **No command-line tool.** TypeScript ships `json-cli` and Go ships
 `tabnas-json`, both thin front ends over `parse` that re-serialize with a

@@ -91,7 +91,7 @@ grammar-local closures.
 
 The variadic argument is the `Make(extra ...tabnas.Options)` shape used
 elsewhere here: only the first is read, and no argument at all installs
-the layerable grammar.
+the grammar as a layer under your own configuration.
 
 ### `type GrammarOptions struct`
 
