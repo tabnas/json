@@ -41,12 +41,16 @@ Returned values are `tabnas::Value`:
 
 | JSON | `tabnas::Value` |
 |---|---|
-| object | `Object(IndexMap<String, Value>)`, in document order |
-| array | `Array(Vec<Value>)` |
+| object | `Object(Arc<IndexMap<String, Value>>)`, in document order |
+| array | `Array(Arc<Vec<Value>>)` |
 | string | `String(String)` |
 | number | `Number(f64)`, integers included, so `1` is `Number(1.0)` |
 | `true` and `false` | `Bool(bool)` |
 | `null` | `Null` |
+
+Both containers are behind an `Arc`. Indexing and iteration go through
+`Deref`, so `fields["a"]` reads as it would on the map itself, and
+`Arc::make_mut` is the way to change one.
 
 The `Undefined`, `Text`, `ListRef` and `MapRef` variants exist on the
 enum but a strict-JSON parse never produces them, except under the info
@@ -110,6 +114,7 @@ formatted, source-pointing message.
 |---|---|
 | `unexpected` | Any character or token no active rule alternative accepts; the catch-all (unquoted keys, trailing commas, comments, single quotes, bad numbers such as `01`, `+1`, `.5` and `1.`, unknown escapes, empty input, trailing junk). |
 | `unterminated_string` | A string literal with no closing quote (`"abc`). |
+| `unprintable` | A raw control character, below U+0020, inside a string, a literal newline or tab included. The escaped forms `\n` and `\t` are the JSON way to write them. |
 | `cancel` | Nesting past the depth limit below. Rust only: neither other runtime limits depth, so no shared fixture pins this code. |
 | `invalid_unicode` | A `\u` escape that is not four hex digits (`\uZ`, `\u{41}`). |
 
@@ -130,8 +135,9 @@ are wrapped in engine carriers instead of plain variants:
 | `Value::ListRef` | `options.info.list` | `value: Vec<Value>`, `implicit: bool` |
 | `Value::Text` | `options.info.text` | `string: String`, `quote: String` |
 
-For strict JSON every container is explicit, so `implicit` is always
-`false`, and `quote` is always the double quote.
+`MapRef` and `ListRef` are behind an `Arc` as well, so a match arm reads
+their fields through `Deref`. For strict JSON every container is explicit,
+so `implicit` is always `false`, and `quote` is always the double quote.
 
 ## What is accepted
 
@@ -277,12 +283,12 @@ that had not been bound. Install `json` and relax what you need with
 One consequence shows in the grammar. The other two ports make
 `push$.chain: false` on the `elem` close alternates an opt-in their
 rules-only installers leave off, because that key is a claim about the
-whole assembled grammar and a layerable core cannot make it for rules it
-has never seen. This port has no such core, so its grammar is the
-assembled grammar and the claim is the port's to make: the key is
-unconditional here. It buys nothing either way, since a list here is one
-shared array that every view already sees grow. It is declared so the
-three grammars stay one grammar.
+whole assembled grammar and a core that is layered under other rules
+cannot make it for rules it has never seen. This port has no such core,
+so its grammar is the assembled grammar and the claim is the port's to
+make: the key is unconditional here. It buys nothing either way, since a
+list here is one shared array that every view already sees grow. It is
+declared so the three grammars stay one grammar.
 
 **No command-line tool.** TypeScript ships `json-cli` and Go ships
 `tabnas-json`, both thin front ends over `parse` that re-serialize with a

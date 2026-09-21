@@ -44,8 +44,14 @@ of any replacement:
 
 Three details that look arbitrary and are not:
 
-- The predicate is `<`, not `<=`. The budget check runs at the top of an
-  iteration, before the rule for the token about to be read is pushed.
+- The predicate is `<=`, and the count includes the rule the loop is
+  inside. The engine hands the budget check that rule separately, as
+  `context.rule`, and `rule_stack` holds only its ancestors; a container
+  is open from the moment it is the current rule, so it is counted. When
+  only the ancestors were counted the boundary depended on what the
+  innermost container held: `[]` nested 127 deep parsed while `[1]`
+  nested 127 deep, and 127 nested objects, answered `cancel`, which
+  serde_json accepts. The suite measures every shape against the oracle.
 - Depth is counted from RULE NAMES, not `rule_stack.len()`. The stack
   holds about three rules per level, so a length limit would encode that
   ratio and shift the first time the grammar gains an alternate.
@@ -151,7 +157,10 @@ the prose gate cover them. Two consequences when editing them:
 
 `make test-rs` is the fast loop. `ci/rust/run.sh` is the full gate and is
 what CI would run: it adds `cargo fmt --check`, a build, doctests, the
-lockfile check and the MSRV pin. The engine must be a sibling checkout at
+lockfile check and the MSRV pin. The doctests include `README.md` through
+a `#[cfg(doctest)]` include in `src/lib.rs`, so every `rust` fence in the
+README is compiled and run as written: keep each one a complete `fn main`
+example. The engine must be a sibling checkout at
 `../../parser`.
 
 For the docs, run both halves from the repo root:

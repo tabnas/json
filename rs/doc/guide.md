@@ -45,12 +45,12 @@ fn try_parse(src: &str) -> Result<tabnas::Value, (String, usize, usize)> {
 }
 ```
 
-Three of the codes this parser emits are `unexpected`,
-`unterminated_string` and `invalid_unicode`. Those are the parity
-contract shared with the TypeScript version, so a caller matching on them
-works against any of the three runtimes.
+Four of the codes this parser emits are `unexpected`,
+`unterminated_string`, `unprintable` and `invalid_unicode`. Those are the
+parity contract shared with the TypeScript version, so a caller matching
+on them works against any of the three runtimes.
 
-A fourth, `cancel`, is **Rust only**: it is what nesting past 127 levels
+A fifth, `cancel`, is **Rust only**: it is what nesting past 127 levels
 answers, and neither other runtime limits depth, so there is nothing for
 them to agree with. Match on it if you parse input you did not write;
 otherwise treat any code you do not recognize as a rejection.
