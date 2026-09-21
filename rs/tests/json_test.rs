@@ -294,3 +294,26 @@ fn integer_like_keys_keep_document_order_like_its_platform_oracle() {
     let oracle_keys: Vec<&str> = theirs.keys().map(String::as_str).collect();
     assert_eq!(keys, oracle_keys, "serde_json orders them the same way");
 }
+
+#[test]
+fn a_raw_control_character_in_a_string_is_unprintable() {
+    // The engine answers `unprintable` for a raw character below U+0020
+    // inside a string, in all three runtimes (the TypeScript and Go
+    // lexers emit the same code), yet no shared fixture row pins the
+    // code and the reference table did not list it. serde_json rejects
+    // every one of these too, which is what makes it a parity claim
+    // rather than a preference.
+    for src in ["\"a\u{1}b\"", "\"a\tb\"", "\"a\nb\"", "\"\u{0}\""] {
+        let error = parse(src).expect_err("a raw control character is not JSON");
+        assert_eq!(error.code, "unprintable", "{src:?}");
+        assert!(
+            serde_json::from_str::<serde_json::Value>(src).is_err(),
+            "serde_json must reject it too: {src:?}"
+        );
+    }
+    // The escaped forms are the JSON way to write the same characters.
+    assert_eq!(
+        parse(r#""a\tb\n""#).expect("escapes parse"),
+        Value::String("a\tb\n".into())
+    );
+}
