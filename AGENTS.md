@@ -30,7 +30,7 @@ grammar.
 | Path | What it is |
 |---|---|
 | [`ts/`](ts/) | **Canonical** TypeScript implementation — the `@tabnas/json` package. Plugin in `src/json.ts`, CLI in `src/json-cli.ts`. Depends on `@tabnas/parser`. |
-| [`go/`](go/) | Go port — `github.com/tabnas/json/go`. Plugin in `json.go`. Depends on `github.com/tabnas/parser/go` via a `replace` directive (sibling checkout). |
+| [`go/`](go/) | Go port — `github.com/tabnas/json/go`. Plugin in `json.go`. Depends on a **published** `github.com/tabnas/parser/go` version — a plain `require` in `go/go.mod`, no `replace`. |
 | [`rs/`](rs/) | Rust port — the `tabnas-json` crate. Plugin in `src/lib.rs`, conformance grader in `tests/conformance_test.rs`. Depends on the `tabnas` crate via a `path` dependency (sibling checkout). Library only: no CLI. See [`rs/AGENTS.md`](rs/AGENTS.md). |
 | [`test/fetch-jsontestsuite.sh`](test/fetch-jsontestsuite.sh) | Fetches the external [nst/JSONTestSuite](https://github.com/nst/JSONTestSuite) at **pinned commit `1ef36fa0`** into `test/jsontestsuite/` (gitignored, never vendored). Idempotent, and verifies both the commit and the 95/188/35 census. Run automatically by `pretest` (TS) and `TestMain` (Go); by hand with `make json-test-suite`. |
 | [`test/spec/`](test/spec/) | Shared `.tsv` conformance fixtures (`valid.tsv` = `input → expected`, `errors.tsv` / `reject-extended.tsv` = `input → ERROR:<code>`). Auto-discovered and run by all three suites. See [`test/AGENTS.md`](test/AGENTS.md). |
@@ -41,9 +41,9 @@ grammar.
 
 ## The tabnas engine dependency
 
-All three runtimes depend on the unpublished `@tabnas` siblings via a
+TypeScript and Rust depend on the unpublished `@tabnas` siblings via a
 **sibling checkout** (the standard tabnas dev model until the packages
-publish tagged releases):
+publish tagged releases). Go no longer does:
 
 - TypeScript: `@tabnas/parser` is a `peerDependency` (`">=2"`) in
   `ts/package.json` and mirrored as a `file:../../parser/ts`
@@ -51,8 +51,12 @@ publish tagged releases):
   peers; `engines.node` is `">=24"`). `@tabnas/debug` and
   `@tabnas/railroad` are **dev-only** `file:` devDependencies — debug for
   the composition test, railroad to regenerate `ts/doc/grammar.{svg,txt}`.
-- Go: `replace github.com/tabnas/parser/go => ../../parser/go` in
-  `go/go.mod`. That is the module's only tabnas dependency.
+- Go: `require github.com/tabnas/parser/go vX.Y.Z` in `go/go.mod` — a
+  published version, resolved from the proxy, with **no `replace`**.
+  (It used to carry one onto `../../parser/go`; it no longer does, and
+  the `"Replace": null` assertion below is what keeps it that way.) That
+  is the module's only tabnas dependency besides
+  `github.com/tabnas/support/go`.
 - Rust: `tabnas = { path = "../../parser/rs" }` in `rs/Cargo.toml`. That
   is the crate's only tabnas dependency. The engine crate is unpublished,
   so `rs/Cargo.lock` records a resolution naming it and there is no
