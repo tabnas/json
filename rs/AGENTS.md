@@ -159,11 +159,11 @@ the prose gate cover them. Two consequences when editing them:
 what CI would run: it adds `cargo fmt --check`, a build, doctests, clippy
 at `-D warnings`, a rustdoc build (`cargo doc --no-deps` under
 `RUSTDOCFLAGS=-D warnings`, which is the only arm that sees a broken or
-ambiguous intra-doc link), the lockfile check and the MSRV pin. The doctests include `README.md` through
-a `#[cfg(doctest)]` include in `src/lib.rs`, so every `rust` fence in the
-README is compiled and run as written: keep each one a complete `fn main`
-example. The engine must be a sibling checkout at
-`../../parser`.
+ambiguous intra-doc link), the lockfile check and the MSRV pin. The
+doctests include `README.md` through a `#[cfg(doctest)]` include in
+`src/lib.rs`, so every `rust` fence in the README is compiled and run as
+written: keep each one a complete `fn main` example. The engine must be a
+sibling checkout at `../../parser`.
 
 For the docs, run both halves from the repo root:
 
