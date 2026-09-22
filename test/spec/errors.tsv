@@ -58,3 +58,12 @@ nullnull	ERROR:unexpected
 "a" "b"	ERROR:unexpected
 null null	ERROR:unexpected
 [1] 2	ERROR:unexpected
+# A raw control character inside a string, which RFC 8259 forbids: the
+# escaped forms are the JSON way to write one. This is the fourth shared
+# code, and the only one no row pinned until now, so each runtime's
+# agreement on it rested on a separate in-language assertion.
+"a\tb"	ERROR:unprintable
+"a\nb"	ERROR:unprintable
+"a\rb"	ERROR:unprintable
+["x\ty"]	ERROR:unprintable
+{"k":"v\nw"}	ERROR:unprintable

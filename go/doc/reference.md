@@ -148,6 +148,7 @@ type assertion. Relevant exported fields:
 |---|---|
 | `unexpected` | Any character/token no active rule alternative accepts; the catch-all (unquoted keys, trailing commas, comments, single quotes, bad numbers like `01`/`+1`/`.5`/`1.`, unknown escapes, empty input, trailing junk). |
 | `unterminated_string` | A string literal with no closing quote (`"abc`). |
+| `unprintable` | A raw control character below U+0020 inside a string, a literal newline or tab included. The escaped forms `\n` and `\t` are the JSON way to write them. |
 | `invalid_unicode` | A `\u` escape that is not four hex digits (`\uZ`, `\u{41}`). |
 
 ## Info carriers

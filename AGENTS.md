@@ -82,7 +82,11 @@ first.
 3. Error **codes** are part of the shared contract. `errors.tsv` and
    `reject-extended.tsv` are both `input → ERROR:<code>`, and all three
    suites assert the exact code. The SHARED codes are `unexpected`,
-   `unterminated_string`, and `invalid_unicode`.
+   `unterminated_string`, `unprintable`, and `invalid_unicode`.
+   `unprintable` is the raw control character inside a string, and it
+   reached the fixtures last: all three runtimes had always emitted it,
+   but each said so in its own in-language assertion, so nothing held the
+   three to one answer.
    The runtimes must reject the same input with the same code; if you add
    an error fixture, verify the code is identical in all three runtimes
    before committing it.
