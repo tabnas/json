@@ -258,7 +258,15 @@ fn json_document() -> serde_json::Value {
             // strict-JSON alternates.
             "rule": { "finish": false, "include": "json" },
             // Strict JSON keys are quoted strings only.
-            "tokenSet": { "KEY": ["#ST"] },
+            //
+            // Spelled with the three trailing nulls `ts/src/json.ts`
+            // spells it with, and for the same reason: a token set in a
+            // serialized document overlays the installed one INDEX-WISE,
+            // so a bare `["#ST"]` replaces position 0 and keeps the rest
+            // of the engine default (`#TX #NR #ST #VL`) underneath it.
+            // A `null` clears its position, so listing one per remaining
+            // member is how a wholesale replacement is written.
+            "tokenSet": { "KEY": ["#ST", null, null, null] },
         },
 
         // The value tree is built ENTIRELY by the engine's native-value
@@ -371,7 +379,7 @@ pub fn json(parser: &mut Tabnas) -> Result<(), GrammarError> {
 
 /// Build a standard-JSON parser instance.
 ///
-/// Infallible by design, and it goes through [`json`] rather than
+/// Infallible by design, and it goes through [`json()`] rather than
 /// duplicating the setup, so this path and installing the plugin by hand
 /// cannot drift. The document is a fixed literal, so a failure here is a
 /// bug in this crate rather than anything a caller did — the Go `Make`
@@ -412,4 +420,68 @@ pub fn make() -> Tabnas {
 pub fn parse(src: &str) -> Result<Value, JsonError> {
     static DEFAULT: OnceLock<Tabnas> = OnceLock::new();
     DEFAULT.get_or_init(make).parse(src)
+}
+
+#[cfg(test)]
+mod document {
+    use super::json_document;
+
+    /// The counterpart of `the json plugin opts out of the chain walk` in
+    /// `ts/test/json.test.js` and of its Go twin in `go/json_test.go`.
+    ///
+    /// It has to be asked of the DOCUMENT rather than of an installed
+    /// engine. The engine binds builtin config when it loads the spec and
+    /// then drops the consumed keys from the alternate, so reading the key
+    /// back off an installed grammar answers nothing against a current
+    /// engine, and answers the key only against one too old to recognise
+    /// it, which is residue rather than an answer. Go indirects its
+    /// `installGrammar` to get at the spec for the same reason; here the
+    /// document is a private function and a unit test can read it.
+    ///
+    /// The other two of that trio hold a rules-only installer to leaving
+    /// the claim off. This port has none, so they have no counterpart.
+    #[test]
+    fn the_grammar_opts_out_of_the_chain_walk() {
+        let document = json_document();
+        let alts = document["rule"]["elem"]["close"]
+            .as_array()
+            .expect("elem declares close alternates")
+            .clone();
+        assert_eq!(alts.len(), 2, "both close alts carry the claim");
+        for alt in &alts {
+            assert_eq!(
+                alt["k"]["push$"]["chain"],
+                serde_json::json!(false),
+                "this elem close alt should turn the chain walk off: {alt}"
+            );
+        }
+    }
+
+    /// The `KEY` token set is a WHOLESALE replacement, and the nulls are
+    /// what make it one.
+    ///
+    /// A token set in a serialized document overlays the installed one
+    /// position by position, so `["#ST"]` alone replaces the first member
+    /// of the engine default `#TX #NR #ST #VL` and leaves the tail in
+    /// place, which is a key set that still takes numbers and the bare
+    /// value words. `{1:1}` then parsed as `{}`. The shared fixtures catch
+    /// that, but only through an engine; this catches the spelling itself,
+    /// because three trailing nulls read like padding to anyone tidying.
+    #[test]
+    fn the_key_token_set_replaces_the_default_outright() {
+        let document = json_document();
+        let key = document["options"]["tokenSet"]["KEY"]
+            .as_array()
+            .expect("tokenSet.KEY is a list")
+            .clone();
+        assert_eq!(key[0], serde_json::json!("#ST"), "quoted strings only");
+        assert_eq!(
+            key.len(),
+            4,
+            "one entry per member of the default set, or the tail survives"
+        );
+        for member in key.iter().skip(1) {
+            assert!(member.is_null(), "a cleared position is null: {member}");
+        }
+    }
 }

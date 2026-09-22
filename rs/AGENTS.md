@@ -8,7 +8,7 @@ and this file only covers what is specific to this crate.
 
 | Path | |
 |---|---|
-| `src/lib.rs` | the whole port: options, grammar document, plugin, `make`, `parse` |
+| `src/lib.rs` | the whole port: options, grammar document, plugin, `make`, `parse`, and the unit tests that read the document itself |
 | `tests/parity_test.rs` | the shared `../test/spec/*.tsv` fixtures, plus the serde_json oracle |
 | `tests/conformance_test.rs` | the external nst/JSONTestSuite corpus, and the divergence register |
 | `tests/common/oracle.rs` | one value comparator, shared by both of those |
@@ -156,12 +156,14 @@ the prose gate cover them. Two consequences when editing them:
 ## Running it
 
 `make test-rs` is the fast loop. `ci/rust/run.sh` is the full gate and is
-what CI would run: it adds `cargo fmt --check`, a build, doctests, the
-lockfile check and the MSRV pin. The doctests include `README.md` through
-a `#[cfg(doctest)]` include in `src/lib.rs`, so every `rust` fence in the
-README is compiled and run as written: keep each one a complete `fn main`
-example. The engine must be a sibling checkout at
-`../../parser`.
+what CI would run: it adds `cargo fmt --check`, a build, doctests, clippy
+at `-D warnings`, a rustdoc build (`cargo doc --no-deps` under
+`RUSTDOCFLAGS=-D warnings`, which is the only arm that sees a broken or
+ambiguous intra-doc link), the lockfile check and the MSRV pin. The
+doctests include `README.md` through a `#[cfg(doctest)]` include in
+`src/lib.rs`, so every `rust` fence in the README is compiled and run as
+written: keep each one a complete `fn main` example. The engine must be a
+sibling checkout at `../../parser`.
 
 For the docs, run both halves from the repo root:
 

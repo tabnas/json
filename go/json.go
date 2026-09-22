@@ -107,8 +107,24 @@ func jsonOptions() tabnas.Options {
 		// (not nil — JSON null parses to nil and must stay valid); NaN
 		// never matches via ==, included only for TS parity.
 		Result: &tabnas.ResultOptions{Fail: []any{tabnas.Undefined, math.NaN()}},
-		// Strict JSON keys are quoted strings only.
-		TokenSet: map[string][]string{"KEY": {"#ST"}},
+		// Strict JSON keys are quoted strings only — never #TX, #NR or
+		// #VL. Mirrors the TS `tokenSet: { KEY: ['#ST', null, null, null] }`
+		// and the same four-element list in the Rust grammar document.
+		//
+		// The three trailing empty names are load-bearing, not padding.
+		// From parser/go v0.11.0 on (parser#151) a token set is overlaid
+		// onto the engine default POSITION BY POSITION, as it always has
+		// been in canonical TypeScript. The default KEY set is
+		// `#TX #NR #ST #VL`, so a one-element {"#ST"} rewrites position 0
+		// only and leaves #NR, #ST and #VL live — which is how `{1:1}`,
+		// `{1.5:1}`, `{true:1}` and `{null:null}` came to parse. An empty
+		// name is Go's spelling of the TS `null` (a JSON null through a
+		// serialized spec): applyTokenSets skips it, so clearing
+		// positions 1-3 is how a caller shortens the set. Under v0.10.0,
+		// which go.mod requires and which installs the named set
+		// wholesale, both spellings give the same {#ST}, so this one is
+		// correct on either engine.
+		TokenSet: map[string][]string{"KEY": {"#ST", "", "", ""}},
 	}
 }
 
@@ -296,10 +312,10 @@ func Make(extra ...tabnas.Options) *tabnas.Tabnas {
 	// up to and including parser/go v0.6.1 applied only a subset of
 	// Options in the tabnas.Make() constructor and silently dropped
 	// Options.TokenSet, leaving KEY at the engine default
-	// (#TX #NR #ST #VL) so `{1:1}` / `{null:null}` parsed. Current engine
-	// versions apply TokenSet in Make() too, so both constructions now
-	// agree — but a GOWORK=off build still resolves v0.6.1, so keep this
-	// path until the engine republishes.
+	// (#TX #NR #ST #VL) so `{1:1}` / `{null:null}` parsed. Every version
+	// go.mod can resolve now applies TokenSet in Make() too, so both
+	// constructions agree, and this path stays because it is the design
+	// rule above rather than a workaround for any engine version.
 	j := tabnas.Make()
 	if err := Json(j, nil); err != nil {
 		// The grammar spec is fixed and valid, so this only fires on a

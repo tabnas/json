@@ -35,6 +35,7 @@
 [Rr]edeclaring
 [Rr]untime
 [Rr]untimes
+[Rr]ustdoc
 [Ss]tderr
 [Ss]tdin
 [Ss]tdout

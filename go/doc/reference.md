@@ -148,6 +148,7 @@ type assertion. Relevant exported fields:
 |---|---|
 | `unexpected` | Any character/token no active rule alternative accepts; the catch-all (unquoted keys, trailing commas, comments, single quotes, bad numbers like `01`/`+1`/`.5`/`1.`, unknown escapes, empty input, trailing junk). |
 | `unterminated_string` | A string literal with no closing quote (`"abc`). |
+| `unprintable` | A raw control character below U+0020 inside a string, a literal newline or tab included. The escaped forms `\n` and `\t` are the JSON way to write them. |
 | `invalid_unicode` | A `\u` escape that is not four hex digits (`\uZ`, `\u{41}`). |
 
 ## Info carriers
@@ -201,7 +202,16 @@ that do the tightening (mirroring the TS `JSON_OPTIONS`):
 | `Lex.Empty` | `false` | Reject empty input. |
 | `Rule.Finish` | `false` | Require a complete parse. |
 | `Result.Fail` | `[]any{tabnas.Undefined, math.NaN()}` | Treat "no value"/NaN as a parse failure. |
-| `TokenSet["KEY"]` | `[]string{"#ST"}` | Keys must be quoted strings. |
+| `TokenSet["KEY"]` | `[]string{"#ST", "", "", ""}` | Keys must be quoted strings. |
+
+The three trailing empty names on `TokenSet["KEY"]` are not padding. The
+engine overlays a token set onto the installed one position by position,
+so a bare `{"#ST"}` replaces the first member of the engine default
+(`#TX #NR #ST #VL`) and leaves the rest of it in place, which is a key
+set that still takes numbers and the bare value words. An empty name is
+Go's spelling of the `null` that `ts/src/json.ts` and the Rust grammar
+document write, and it clears its position, so one entry per member of
+the default set is how a wholesale replacement is written.
 
 `strictNumber` is `^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$`.
 `tabnas.Undefined` is the engine's "no value" sentinel, distinct from

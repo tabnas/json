@@ -406,3 +406,51 @@ func TestJsonPluginOptsOutOfTheChainWalk(t *testing.T) {
 		t.Errorf("Json parse = %s, want %s", canon(t, got), want)
 	}
 }
+
+// The KEY token set has to end up holding #ST and NOTHING ELSE, and the
+// three trailing empty names in jsonOptions are what make it so.
+//
+// From parser/go v0.11.0 on (parser#151) a token set is overlaid onto
+// the engine default POSITION BY POSITION, matching canonical
+// TypeScript. The default KEY set is `#TX #NR #ST #VL`, so the
+// one-element {"#ST"} this used to carry rewrote position 0 and left the
+// tail live: `{1:1}`, `{1.5:1}`, `{true:1}` and `{null:null}` all parsed,
+// which encoding/json and JSON.parse both reject. An empty name is Go's
+// spelling of the TS `null` and clears its position.
+//
+// reject-extended.tsv catches the behaviour, but only through whichever
+// engine the build resolved. This asks the built engine what its KEY set
+// actually is, so the spelling is pinned on any engine version -- the
+// empty names read like padding to anyone tidying, and under the v0.10.0
+// go.mod requires, which installs the named set wholesale, dropping them
+// changes nothing at all.
+func TestKeyTokenSetIsQuotedStringsOnly(t *testing.T) {
+	bare := tabnas.Make()
+	def := bare.TokenSet("KEY")
+	if len(def) < 2 {
+		t.Fatalf("engine default KEY = %v; this test assumes a set to narrow", def)
+	}
+	if declared := len(jsonOptions().TokenSet["KEY"]); declared != len(def) {
+		t.Errorf("jsonOptions KEY has %d entries, engine default has %d: "+
+			"an index-wise overlay needs one entry per default member, "+
+			"or the tail survives", declared, len(def))
+	}
+
+	for label, j := range map[string]*tabnas.Tabnas{
+		"Make()":    Make(),
+		"Use(Json)": func() *tabnas.Tabnas { j := tabnas.Make(); mustJson(t, j); return j }(),
+	} {
+		got := j.TokenSet("KEY")
+		want := []tabnas.Tin{j.Token("#ST")}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("%s: KEY = %v, want %v (#ST alone)", label, got, want)
+		}
+	}
+}
+
+func mustJson(t *testing.T, j *tabnas.Tabnas) {
+	t.Helper()
+	if err := Json(j, nil); err != nil {
+		t.Fatalf("Json: %v", err)
+	}
+}

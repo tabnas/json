@@ -87,6 +87,57 @@ fn empty_input_is_not_a_value() {
 }
 
 #[test]
+fn supports_the_engine_info_options() {
+    // The foundation other grammar plugins build on. With the engine's
+    // info options on, containers and strings arrive as carriers that say
+    // how they were written, and `rs/doc/reference.md` documents both the
+    // three variants and two things only strict JSON makes true of them.
+    // Nothing held either claim: `ts/test/json.test.js` covers this for
+    // the canonical runtime and this port had no counterpart.
+    let mut parser = make();
+    parser
+        .set_options(|options| {
+            options.info.map = true;
+            options.info.list = true;
+            options.info.text = true;
+        })
+        .expect("the info options are valid");
+
+    let value = parser.parse(r#"{"a":["x",1]}"#).expect("parses");
+
+    let Value::MapRef(map) = &value else {
+        panic!("info.map should carry the object: {value:?}");
+    };
+    // Every strict-JSON container is written out, so none is implicit.
+    assert!(!map.implicit, "a JSON object is never implicit");
+
+    let Some(Value::ListRef(list)) = map.value.get("a") else {
+        panic!("info.list should carry the array: {map:?}");
+    };
+    assert!(!list.implicit, "a JSON array is never implicit");
+
+    let Some(Value::Text(text)) = list.value.first() else {
+        panic!("info.text should carry the string: {list:?}");
+    };
+    // Strict JSON has one string delimiter, so the quote is never
+    // anything else.
+    assert_eq!(text.quote, "\"");
+    assert_eq!(text.string, "x");
+
+    // Everything outside the carriers is the value it always was.
+    assert_eq!(
+        list.value.get(1).map(ToString::to_string),
+        Some("1".to_string())
+    );
+
+    // And a plain instance is untouched by any of it.
+    assert!(matches!(
+        parse(r#"{"a":["x",1]}"#).expect("parses"),
+        Value::Object(_)
+    ));
+}
+
+#[test]
 fn make_and_parse_agree() {
     // `parse` goes through `make`, which goes through the plugin, so the
     // two construction paths cannot drift.

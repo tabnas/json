@@ -30,7 +30,7 @@ grammar.
 | Path | What it is |
 |---|---|
 | [`ts/`](ts/) | **Canonical** TypeScript implementation — the `@tabnas/json` package. Plugin in `src/json.ts`, CLI in `src/json-cli.ts`. Depends on `@tabnas/parser`. |
-| [`go/`](go/) | Go port — `github.com/tabnas/json/go`. Plugin in `json.go`. Depends on `github.com/tabnas/parser/go` via a `replace` directive (sibling checkout). |
+| [`go/`](go/) | Go port — `github.com/tabnas/json/go`. Plugin in `json.go`. Depends on a **published** `github.com/tabnas/parser/go` version — a plain `require` in `go/go.mod`, no `replace`. |
 | [`rs/`](rs/) | Rust port — the `tabnas-json` crate. Plugin in `src/lib.rs`, conformance grader in `tests/conformance_test.rs`. Depends on the `tabnas` crate via a `path` dependency (sibling checkout). Library only: no CLI. See [`rs/AGENTS.md`](rs/AGENTS.md). |
 | [`test/fetch-jsontestsuite.sh`](test/fetch-jsontestsuite.sh) | Fetches the external [nst/JSONTestSuite](https://github.com/nst/JSONTestSuite) at **pinned commit `1ef36fa0`** into `test/jsontestsuite/` (gitignored, never vendored). Idempotent, and verifies both the commit and the 95/188/35 census. Run automatically by `pretest` (TS) and `TestMain` (Go); by hand with `make json-test-suite`. |
 | [`test/spec/`](test/spec/) | Shared `.tsv` conformance fixtures (`valid.tsv` = `input → expected`, `errors.tsv` / `reject-extended.tsv` = `input → ERROR:<code>`). Auto-discovered and run by all three suites. See [`test/AGENTS.md`](test/AGENTS.md). |
@@ -41,9 +41,9 @@ grammar.
 
 ## The tabnas engine dependency
 
-All three runtimes depend on the unpublished `@tabnas` siblings via a
+TypeScript and Rust depend on the unpublished `@tabnas` siblings via a
 **sibling checkout** (the standard tabnas dev model until the packages
-publish tagged releases):
+publish tagged releases). Go no longer does:
 
 - TypeScript: `@tabnas/parser` is a `peerDependency` (`">=2"`) in
   `ts/package.json` and mirrored as a `file:../../parser/ts`
@@ -51,8 +51,12 @@ publish tagged releases):
   peers; `engines.node` is `">=24"`). `@tabnas/debug` and
   `@tabnas/railroad` are **dev-only** `file:` devDependencies — debug for
   the composition test, railroad to regenerate `ts/doc/grammar.{svg,txt}`.
-- Go: `replace github.com/tabnas/parser/go => ../../parser/go` in
-  `go/go.mod`. That is the module's only tabnas dependency.
+- Go: `require github.com/tabnas/parser/go vX.Y.Z` in `go/go.mod` — a
+  published version, resolved from the proxy, with **no `replace`**.
+  (It used to carry one onto `../../parser/go`; it no longer does, and
+  the `"Replace": null` assertion below is what keeps it that way.) That
+  is the module's only tabnas dependency besides
+  `github.com/tabnas/support/go`.
 - Rust: `tabnas = { path = "../../parser/rs" }` in `rs/Cargo.toml`. That
   is the crate's only tabnas dependency. The engine crate is unpublished,
   so `rs/Cargo.lock` records a resolution naming it and there is no
@@ -82,7 +86,11 @@ first.
 3. Error **codes** are part of the shared contract. `errors.tsv` and
    `reject-extended.tsv` are both `input → ERROR:<code>`, and all three
    suites assert the exact code. The SHARED codes are `unexpected`,
-   `unterminated_string`, and `invalid_unicode`.
+   `unterminated_string`, `unprintable`, and `invalid_unicode`.
+   `unprintable` is the raw control character inside a string, and it
+   reached the fixtures last: all three runtimes had always emitted it,
+   but each said so in its own in-language assertion, so nothing held the
+   three to one answer.
    The runtimes must reject the same input with the same code; if you add
    an error fixture, verify the code is identical in all three runtimes
    before committing it.
@@ -198,7 +206,10 @@ first.
    object, and only Go, where a list is a slice VALUE, both pays the
    O(elements^2) walk and hands a layered plugin a stale list. Pinned by
    `TestRulesOnlyInstallerLeavesTheChainWalkOn` and its two neighbours in
-   each port, and by the `push-chain-off` row in the engine's own
+   TS and Go, by `the_grammar_opts_out_of_the_chain_walk` in
+   `rs/src/lib.rs` (the only one of the three with a Rust counterpart,
+   because the other two hold a rules-only installer this port does not
+   have), and by the `push-chain-off` row in the engine's own
    `test/spec/divergent.tsv`.
 
 ## Public API
@@ -221,8 +232,10 @@ surface (`rs/src/lib.rs`) mirror each other:
 - `registerJsonGrammar` / `RegisterJSONGrammar` — install just the rule
   set, for plugins layering on top. **No Rust equivalent**, for the
   reason in rule 6.
-- `TabnasError` is re-exported as `JsonError` in TS and Rust; Go returns
-  `*tabnas.TabnasError` directly.
+- `TabnasError` is re-exported as `JsonError` in all three: an
+  `export { TabnasError as JsonError }` in TS, a `pub use` in Rust, and a
+  `type JsonError = tabnas.TabnasError` alias in Go, reached with
+  `errors.As(err, &je)`.
 - `VERSION` const in all three (`ts/src/json.ts`, `go/json.go`,
   `rs/src/lib.rs`); it MUST equal `ts/package.json` "version". Nothing
   keeps the runtimes in sync automatically — `make publish-go` rewrites

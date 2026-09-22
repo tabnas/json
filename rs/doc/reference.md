@@ -210,7 +210,15 @@ definition of strict JSON rather than two halves that can drift.
 | `lex.empty` | `false` | Reject empty input. |
 | `rule.finish` | `false` | Require a complete parse. |
 | `rule.include` | `"json"` | Keep only the `json`-tagged alternates. |
-| `tokenSet.KEY` | `["#ST"]` | Keys must be quoted strings. |
+| `tokenSet.KEY` | `["#ST", null, null, null]` | Keys must be quoted strings. |
+
+The three trailing nulls on `tokenSet.KEY` are not padding. A token set
+in a serialized document overlays the installed one position by position,
+so a bare `["#ST"]` replaces the first member of the engine default
+(`#TX #NR #ST #VL`) and leaves the rest of it in place, which is a key
+set that still takes numbers and the bare value words. A null clears its
+position, so one per remaining member is how a wholesale replacement is
+written. `ts/src/json.ts` spells it the same way.
 
 Two entries differ from the other runtimes and are deliberate.
 
@@ -303,8 +311,10 @@ declared so the three grammars stay one grammar.
 | `rs/tests/json_test.rs` | Behaviour the fixtures do not pin, including the two platform asymmetries and the shared default parser under concurrent callers. |
 | `rs/tests/common/oracle.rs` | The one value comparator both graders use. |
 | `rs/tests/version_test.rs` | `VERSION`, `Cargo.toml` and `ts/package.json` agree. |
+| `rs/src/lib.rs` | Unit tests over the grammar document: the chain-off claim and the wholesale `KEY` token set, both of which an installed engine cannot be asked about. |
 | `rs/tests/common/spec.rs` | The fixture loader, matched to the `@tabnas/support` escape codec. |
 
 Run them with `cargo test --all-targets` in `rs/`, or `make test-rs` from
 the repository root. `ci/rust/run.sh` adds formatting, the lockfile
-check, doctests and clippy at `-D warnings`.
+check, doctests, clippy at `-D warnings`, and a rustdoc build that fails
+on a broken or ambiguous intra-doc link.
