@@ -228,8 +228,10 @@ surface (`rs/src/lib.rs`) mirror each other:
 - `registerJsonGrammar` / `RegisterJSONGrammar` — install just the rule
   set, for plugins layering on top. **No Rust equivalent**, for the
   reason in rule 6.
-- `TabnasError` is re-exported as `JsonError` in TS and Rust; Go returns
-  `*tabnas.TabnasError` directly.
+- `TabnasError` is re-exported as `JsonError` in all three: an
+  `export { TabnasError as JsonError }` in TS, a `pub use` in Rust, and a
+  `type JsonError = tabnas.TabnasError` alias in Go, reached with
+  `errors.As(err, &je)`.
 - `VERSION` const in all three (`ts/src/json.ts`, `go/json.go`,
   `rs/src/lib.rs`); it MUST equal `ts/package.json` "version". Nothing
   keeps the runtimes in sync automatically — `make publish-go` rewrites
