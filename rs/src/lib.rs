@@ -258,7 +258,15 @@ fn json_document() -> serde_json::Value {
             // strict-JSON alternates.
             "rule": { "finish": false, "include": "json" },
             // Strict JSON keys are quoted strings only.
-            "tokenSet": { "KEY": ["#ST"] },
+            //
+            // Spelled with the three trailing nulls `ts/src/json.ts`
+            // spells it with, and for the same reason: a token set in a
+            // serialized document overlays the installed one INDEX-WISE,
+            // so a bare `["#ST"]` replaces position 0 and keeps the rest
+            // of the engine default (`#TX #NR #ST #VL`) underneath it.
+            // A `null` clears its position, so listing one per remaining
+            // member is how a wholesale replacement is written.
+            "tokenSet": { "KEY": ["#ST", null, null, null] },
         },
 
         // The value tree is built ENTIRELY by the engine's native-value

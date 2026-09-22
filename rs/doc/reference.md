@@ -210,7 +210,15 @@ definition of strict JSON rather than two halves that can drift.
 | `lex.empty` | `false` | Reject empty input. |
 | `rule.finish` | `false` | Require a complete parse. |
 | `rule.include` | `"json"` | Keep only the `json`-tagged alternates. |
-| `tokenSet.KEY` | `["#ST"]` | Keys must be quoted strings. |
+| `tokenSet.KEY` | `["#ST", null, null, null]` | Keys must be quoted strings. |
+
+The three trailing nulls on `tokenSet.KEY` are not padding. A token set
+in a serialized document overlays the installed one position by position,
+so a bare `["#ST"]` replaces the first member of the engine default
+(`#TX #NR #ST #VL`) and leaves the rest of it in place, which is a key
+set that still takes numbers and the bare value words. A null clears its
+position, so one per remaining member is how a wholesale replacement is
+written. `ts/src/json.ts` spells it the same way.
 
 Two entries differ from the other runtimes and are deliberate.
 
