@@ -307,4 +307,5 @@ declared so the three grammars stay one grammar.
 
 Run them with `cargo test --all-targets` in `rs/`, or `make test-rs` from
 the repository root. `ci/rust/run.sh` adds formatting, the lockfile
-check, doctests and clippy at `-D warnings`.
+check, doctests, clippy at `-D warnings`, and a rustdoc build that fails
+on a broken or ambiguous intra-doc link.

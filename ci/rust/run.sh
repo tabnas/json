@@ -118,6 +118,16 @@ trap 'rm -f "$LOCK_BEFORE"' EXIT
 "${CARGO[@]}" test --doc
 "${CARGO[@]}" clippy --all-targets --all-features -- -D warnings
 
+# A broken or ambiguous intra-doc link is a rustdoc WARNING, and no arm
+# above runs rustdoc over the crate docs: `test --doc` compiles the code in
+# the fences and says nothing about the links around them, and `clippy` does
+# not run rustdoc at all. So `[`json`]` sat ambiguous between the function
+# and the `serde_json::json!` macro the crate imports, rendering as plain
+# text on docs.rs, and every gate stayed green. `-D warnings` through
+# RUSTDOCFLAGS turns that into a failure; `--no-deps` keeps it about this
+# crate rather than the engine.
+RUSTDOCFLAGS="-D warnings" "${CARGO[@]}" doc --no-deps
+
 # Now that cargo has had every chance to rewrite it, the lock must still
 # describe the same resolution it did when committed.
 if ! diff -q <(lock_without_engine_version "$LOCK_BEFORE") \

@@ -371,7 +371,7 @@ pub fn json(parser: &mut Tabnas) -> Result<(), GrammarError> {
 
 /// Build a standard-JSON parser instance.
 ///
-/// Infallible by design, and it goes through [`json`] rather than
+/// Infallible by design, and it goes through [`json()`] rather than
 /// duplicating the setup, so this path and installing the plugin by hand
 /// cannot drift. The document is a fixed literal, so a failure here is a
 /// bug in this crate rather than anything a caller did — the Go `Make`
