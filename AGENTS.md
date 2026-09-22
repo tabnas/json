@@ -202,7 +202,10 @@ first.
    object, and only Go, where a list is a slice VALUE, both pays the
    O(elements^2) walk and hands a layered plugin a stale list. Pinned by
    `TestRulesOnlyInstallerLeavesTheChainWalkOn` and its two neighbours in
-   each port, and by the `push-chain-off` row in the engine's own
+   TS and Go, by `the_grammar_opts_out_of_the_chain_walk` in
+   `rs/src/lib.rs` (the only one of the three with a Rust counterpart,
+   because the other two hold a rules-only installer this port does not
+   have), and by the `push-chain-off` row in the engine's own
    `test/spec/divergent.tsv`.
 
 ## Public API

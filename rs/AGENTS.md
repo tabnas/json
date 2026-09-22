@@ -8,7 +8,7 @@ and this file only covers what is specific to this crate.
 
 | Path | |
 |---|---|
-| `src/lib.rs` | the whole port: options, grammar document, plugin, `make`, `parse` |
+| `src/lib.rs` | the whole port: options, grammar document, plugin, `make`, `parse`, and the unit tests that read the document itself |
 | `tests/parity_test.rs` | the shared `../test/spec/*.tsv` fixtures, plus the serde_json oracle |
 | `tests/conformance_test.rs` | the external nst/JSONTestSuite corpus, and the divergence register |
 | `tests/common/oracle.rs` | one value comparator, shared by both of those |

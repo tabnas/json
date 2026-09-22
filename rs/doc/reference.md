@@ -311,6 +311,7 @@ declared so the three grammars stay one grammar.
 | `rs/tests/json_test.rs` | Behaviour the fixtures do not pin, including the two platform asymmetries and the shared default parser under concurrent callers. |
 | `rs/tests/common/oracle.rs` | The one value comparator both graders use. |
 | `rs/tests/version_test.rs` | `VERSION`, `Cargo.toml` and `ts/package.json` agree. |
+| `rs/src/lib.rs` | Unit tests over the grammar document: the chain-off claim and the wholesale `KEY` token set, both of which an installed engine cannot be asked about. |
 | `rs/tests/common/spec.rs` | The fixture loader, matched to the `@tabnas/support` escape codec. |
 
 Run them with `cargo test --all-targets` in `rs/`, or `make test-rs` from
