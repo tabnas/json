@@ -421,9 +421,10 @@ func TestJsonPluginOptsOutOfTheChainWalk(t *testing.T) {
 // reject-extended.tsv catches the behaviour, but only through whichever
 // engine the build resolved. This asks the built engine what its KEY set
 // actually is, so the spelling is pinned on any engine version -- the
-// empty names read like padding to anyone tidying, and under the v0.10.0
-// go.mod requires, which installs the named set wholesale, dropping them
-// changes nothing at all.
+// empty names read like padding to anyone tidying, and under an engine
+// up to v0.10.0, which installs the named set wholesale, dropping them
+// changes nothing at all. go.mod requires v0.12.0, where dropping them
+// reopens non-string keys.
 func TestKeyTokenSetIsQuotedStringsOnly(t *testing.T) {
 	bare := tabnas.Make()
 	def := bare.TokenSet("KEY")
