@@ -100,6 +100,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.release.outputs.tag }}
         run: |
+          # build.sh leaves unsuffixed libtabnasjson.so / .dylib copies beside the
+          # target artifacts, and the shared assemble step uploads them. No
+          # manifest names them, so each is an unlabelled second copy of one
+          # architecture. Remove exactly those names, and headers, and never
+          # anything else a maintainer may have attached.
+          for A in $(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name'); do
+            case "$A" in
+              libtabnasjson.so|libtabnasjson.dylib|libtabnasjson.dll|*.h)
+                gh release delete-asset "$TAG" "$A" --repo "$GITHUB_REPOSITORY" --yes
+                echo "removed $A (not a manifest target)" ;;
+            esac
+          done
           HAS="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets \
             --jq 'any(.assets[]; .name == "manifest.json")')"
           [ "$HAS" = true ] || { echo "::error::$TAG has no manifest.json — leaving it unpublished"; exit 1; }
