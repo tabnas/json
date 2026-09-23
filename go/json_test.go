@@ -339,11 +339,11 @@ func pushChainOf(t *testing.T, spec *tabnas.GrammarSpec, i int) (chain bool, set
 // RegisterJSONGrammar must leave the key off and let the engine walk.
 //
 // These assert on what is handed to the engine rather than on a parse.
-// The engine release go.mod pins ignores push$.chain, so both grammars
-// parse identically today; they stop being identical the moment that
-// requirement moves, which is exactly when a layered plugin reading
-// $prev would start getting a silent wrong answer in Go and the right
-// one in TypeScript and Rust.
+// The JSON rules never read a replaced rule, so both grammars parse the
+// same documents to the same values; a parse cannot tell them apart. The
+// engine go.mod requires honours push$.chain (parser/go v0.10.0 on), so
+// the key is live: set wrongly, a layered plugin reading $prev gets a
+// silent wrong answer in Go and the right one in TypeScript and Rust.
 func TestRulesOnlyInstallerLeavesTheChainWalkOn(t *testing.T) {
 	spec := captureGrammar(t, func(j *tabnas.Tabnas) error {
 		return RegisterJSONGrammar(j)
@@ -421,9 +421,10 @@ func TestJsonPluginOptsOutOfTheChainWalk(t *testing.T) {
 // reject-extended.tsv catches the behaviour, but only through whichever
 // engine the build resolved. This asks the built engine what its KEY set
 // actually is, so the spelling is pinned on any engine version -- the
-// empty names read like padding to anyone tidying, and under the v0.10.0
-// go.mod requires, which installs the named set wholesale, dropping them
-// changes nothing at all.
+// empty names read like padding to anyone tidying, and under an engine
+// up to v0.10.0, which installs the named set wholesale, dropping them
+// changes nothing at all. go.mod requires v0.12.0, where dropping them
+// reopens non-string keys.
 func TestKeyTokenSetIsQuotedStringsOnly(t *testing.T) {
 	bare := tabnas.Make()
 	def := bare.TokenSet("KEY")

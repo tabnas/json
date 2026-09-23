@@ -30,7 +30,7 @@ import (
 // VERSION is this module's version. It MUST equal ts/package.json
 // "version": the release orchestrator rewrites both, and
 // TestVersionMatchesPackageJSON fails the build if they drift.
-const VERSION = "0.5.8"
+const VERSION = "0.5.9"
 
 // JsonError is the error type returned by a failed parse — an alias of
 // the engine's *tabnas.TabnasError (with Code / Row / Col / Hint fields
@@ -120,10 +120,11 @@ func jsonOptions() tabnas.Options {
 		// `{1.5:1}`, `{true:1}` and `{null:null}` came to parse. An empty
 		// name is Go's spelling of the TS `null` (a JSON null through a
 		// serialized spec): applyTokenSets skips it, so clearing
-		// positions 1-3 is how a caller shortens the set. Under v0.10.0,
-		// which go.mod requires and which installs the named set
-		// wholesale, both spellings give the same {#ST}, so this one is
-		// correct on either engine.
+		// positions 1-3 is how a caller shortens the set. go.mod requires
+		// v0.12.0, which overlays this way, so the empty names are what
+		// that engine needs. Engines up to v0.10.0 installed the named set
+		// wholesale, where both spellings give the same {#ST}, so this one
+		// is correct on either kind of engine.
 		TokenSet: map[string][]string{"KEY": {"#ST", "", "", ""}},
 	}
 }

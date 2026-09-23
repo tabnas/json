@@ -115,10 +115,10 @@ two hand out one array object that every view already shares, so there the
 same key is a no-op. The grammars are kept in step across the three ports,
 so the flag is declared in all of them.
 
-`push$.chain` arrives in the engine after the release `go.mod` currently
-requires. An engine that predates it ignores the key rather than
-rejecting it, so `ChainOff` is inert, not an error, until that
-requirement moves.
+The engine honours `push$.chain` from parser/go v0.10.0 on, and `go.mod`
+requires a later release. So `ChainOff` takes effect and skips the walk
+as just described. An older engine ignores the key rather than rejecting
+it.
 
 ### `const VERSION string`
 
