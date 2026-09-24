@@ -173,6 +173,6 @@ vale --minAlertLevel=error $(node ts/scripts/gated-docs.cjs)
 node ts/scripts/vale-counts.cjs
 ```
 
-Vale must be the version pinned in `ci/workflows/docs.yml`; the counts
-script reads that pin and measuring with another binary rewrites the
-record to numbers CI will not reproduce.
+Vale must be the version pinned in `.github/workflows/docs.yml`; the
+counts script reads that pin and measuring with another binary rewrites
+the record to numbers CI will not reproduce.
