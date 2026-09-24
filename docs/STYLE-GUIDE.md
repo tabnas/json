@@ -40,11 +40,12 @@ drift from the other:
 | `ts/test/docs.test.js` | `make test` | the banned list again, the no-em-dash rule, the first-person rules, the exclamation ration, and no emoji |
 | `ts/scripts/vale-counts.cjs` | `make prose`, `.github/workflows/docs.yml` | that every count in `.vale.ini`, and the total below, are what Vale reports |
 
-The gated set is the reader-facing one: the language-neutral pages under
-`doc/`, the four Diátaxis kinds under `ts/doc/`, `go/doc/` and `rs/doc/`,
-and the package READMEs (root, `ts/`, `go/`, `rs/`). The feasibility
-reports and the defect ledgers are working documents, and they are out.
-So is every `AGENTS.md`.
+The gated set is the reader-facing one: the four Diátaxis kinds under
+`ts/doc/`, `go/doc/` and `rs/doc/`, and the package READMEs (root,
+`ts/`, `go/`, `rs/`). This repository has no language-neutral `doc/`
+directory. The agent guides (`AGENTS.md`, `CLAUDE.md` and the nested
+`AGENTS.md` files) are working documents, and they are out, as is
+`go/clib/README.md`, whose text is stamped from an admin template.
 
 **Four checks live in the local gate rather than in Vale, and the reason
 is capability, not preference.**
@@ -336,8 +337,8 @@ than being left to look executable.
   literally thrown).
 - **plugin**: a unit that adds rules, options or matchers. Not
   "extension", not "middleware".
-- **port**: the Go, Rust and Python implementations are ports of the
-  canonical TypeScript one. Not "version", which means a release.
+- **port**: the Go and Rust implementations are ports of the canonical
+  TypeScript one. Not "version", which means a release.
 - Spell error codes as they render: `[tabnas/unexpected]`.
 
 ## Per-kind templates

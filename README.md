@@ -148,7 +148,7 @@ git clone https://github.com/tabnas/json
 
 Then build the engine first and run each runtime's tests; see
 [`AGENTS.md`](AGENTS.md) and the per-runtime READMEs. CI does this
-automatically (`.github/workflows/build.yml`).
+automatically (`.github/workflows/ci.yml`).
 
 ## Grammar diagram
 
