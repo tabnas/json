@@ -102,7 +102,7 @@ rather than two that can drift.
 ## What "strict" buys, and what it costs
 
 The aim is parity with `serde_json`. The engine's lexer is *lenient* by
-default: left alone it will tokenize hex numbers, bare text and single
+default: left alone it will tokenize hex numbers, bare text, and single
 quotes. Strictness comes from a handful of options:
 
 - `number.check` rejects any number token outside
