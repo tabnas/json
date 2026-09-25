@@ -15,9 +15,10 @@ only in this repository does not last:
 - A workflow with a template in admin `rollout/workflows/`, named
   `json__<file>`, changes in that template too, in a pull request to
   admin. Today that is `ci.yml`, `release.yml`, `crates-release.yml`,
-  `notify-status.yml` and `scorecard.yml`. Admin `scripts/verify.sh`
-  reports a deployed copy that differs from its template, and the next
-  `rollout/apply-workflows.sh --apply` writes the template back over it.
+  `notify-status.yml`, `scorecard.yml` and `deps-gate.yml`. Admin
+  `scripts/verify.sh` reports a deployed copy that differs from its
+  template, and the next `rollout/apply-workflows.sh --apply` writes the
+  template back over it.
 - `clib.yml` and `clib-release.yml` are stamped from admin
   `tasks/clib-template/`, together with `go/clib/`. Change the template
   and restamp with admin `tasks/adopt-clib.sh`, which writes both
