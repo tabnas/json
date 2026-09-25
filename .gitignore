@@ -158,3 +158,5 @@ test/jsontestsuite/
 
 # --- Rust ---
 target/
+
+.DS_Store
