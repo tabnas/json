@@ -154,9 +154,9 @@ const DEPTH_LIMIT: usize = 127;
 
 /// How many containers are open at this point in the parse.
 ///
-/// Unlike the number check, the budget needs no name: `parse_budget`
-/// takes the closure directly, so there is nothing to bind by name and
-/// nothing for the grammar document to reference.
+/// Unlike the number check, the depth check is not bound through the
+/// grammar document: `parse_guard` takes the closure directly, under the
+/// name [`DEPTH_GUARD`], and the document has nothing to reference.
 ///
 /// Counted from the RULE NAMES rather than from `rule_stack.len()`. The
 /// stack holds about three rules per level (`val`, then `map`/`list`,
@@ -190,7 +190,7 @@ fn depth(context: &Context) -> usize {
     ancestors + current
 }
 
-/// The parse budget: stop before the nesting outruns the stack.
+/// The depth guard: stop before the nesting outruns the stack.
 ///
 /// At most, not strictly less than. `depth` already includes the
 /// container the loop is inside, so the count it returns IS the nesting
@@ -203,6 +203,16 @@ fn depth(context: &Context) -> usize {
 fn within_depth_limit(context: &Context) -> bool {
     depth(context) <= DEPTH_LIMIT
 }
+
+/// The name the depth check is installed under, as a parse guard.
+///
+/// A guard rather than the parse budget, because the budget is one slot
+/// that a caller's `parse_budget` replaces, and the limit went with it
+/// whenever a caller set a budget of its own. Nothing a caller does to the
+/// budget reaches a guard. A grammar built on this one that counts depth
+/// its own way installs its check under the same name to replace this one,
+/// as `tabnas_jsonic` does.
+const DEPTH_GUARD: &str = "depth";
 
 /// The one serialized document carrying both the strict-JSON options and
 /// the JSON rule set, mirroring `JSON_OPTIONS` + `registerJsonGrammar` in
@@ -365,15 +375,12 @@ pub fn json(parser: &mut Tabnas) -> Result<(), GrammarError> {
     parser.lex_check_ref(NUMBER_CHECK, strict_number_check);
     let spec = GrammarSpec::from_value(json_document())?;
     parser.grammar(&spec)?;
-    // AFTER the grammar, not before: `grammar` applies the document's
-    // options, and an options pass that does not mention `parse.budget`
-    // is not required to preserve one set earlier. Setting it here is
-    // also the same ordering rule `make` documents for caller options.
-    //
-    // Every iteration, because the check is what stands between a deeply
-    // nested source and a stack overflow; a sampled check would let the
-    // parse run past the limit by however many levels the sample missed.
-    parser.parse_budget(1, within_depth_limit);
+    // A guard, not the budget (see `DEPTH_GUARD`): a budget the caller
+    // sets, before this or after it, runs beside the limit. Every step,
+    // because the check is what stands between a deeply nested source and
+    // a stack overflow; a sampled check would let the parse run past the
+    // limit by however many levels the sample missed.
+    parser.parse_guard(DEPTH_GUARD, within_depth_limit);
     Ok(())
 }
 

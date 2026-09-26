@@ -257,7 +257,8 @@ what changes is the runtime realities:
 - **`result.fail` is unset.** TypeScript and Go set it to the undefined
   sentinel and `NaN`. Neither is reachable here, because `text.lex` is
   false and the bare words are therefore not tokens at all.
-- **Nesting is capped at 127 levels**, through the engine's parse budget.
+- **Nesting is capped at 127 levels**, through a parse guard that holds
+  whatever parse budget a caller sets.
   Neither other runtime caps it, because neither other platform parser
   does. The rejection carries the engine's `cancel` code, which is
   therefore a Rust-only code with no shared fixture behind it.

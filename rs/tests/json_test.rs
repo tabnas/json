@@ -230,7 +230,7 @@ fn the_depth_boundary_does_not_depend_on_what_the_innermost_container_holds() {
     // The test above nests EMPTY arrays, and that shape alone agreed with
     // serde_json while every other one was off by a level: `[]` nested
     // 127 deep parsed but `[1]` nested 127 deep answered `cancel`, and so
-    // did 127 nested objects, because the engine hands the budget check
+    // did 127 nested objects, because the engine hands the depth check
     // the rule it is inside separately from the ancestor stack, and only
     // the ancestors were counted. An empty 127th container was the current
     // rule, and uncounted; a scalar inside it saw all 127 as ancestors.
@@ -276,13 +276,36 @@ fn the_depth_boundary_does_not_depend_on_what_the_innermost_container_holds() {
         let error = parse(&deep).expect_err(&format!("{name}: 128 levels must be rejected"));
         assert_eq!(
             error.code, "cancel",
-            "{name}: the rejection is the budget's"
+            "{name}: the rejection is the depth guard's"
         );
         assert!(
             serde_json::from_str::<serde_json::Value>(&deep).is_err(),
             "{name}: serde_json must reject 128 levels too"
         );
     }
+}
+
+#[test]
+fn the_depth_limit_holds_whatever_budget_the_caller_sets() {
+    // The limit is a parse guard. It was the parse budget, which is one
+    // slot: a caller's `parse_budget` replaced it in place, and 1 KB of
+    // open brackets could abort the process again.
+    let nest = |n: usize| "[".repeat(n) + &"]".repeat(n);
+    let calls = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let seen = calls.clone();
+    let mut parser = make();
+    parser.parse_budget(1, move |_| {
+        seen.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        true
+    });
+    assert!(parser.parse(&nest(127)).is_ok());
+    assert!(
+        calls.load(std::sync::atomic::Ordering::Relaxed) > 0,
+        "the caller's budget runs too"
+    );
+    assert_eq!(parser.parse(&nest(128)).unwrap_err().code, "cancel");
+    assert_eq!(parser.parse(&nest(100_000)).unwrap_err().code, "cancel");
+    assert_eq!(parser.parse_guards.keys().collect::<Vec<_>>(), ["depth"]);
 }
 
 #[test]
