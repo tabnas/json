@@ -30,7 +30,7 @@ definition of "strict JSON" rather than two halves that can drift.
 
 ## The depth limit is a crash fix as well as a parity one
 
-`json()` binds `options.parse.budget` to a check that counts open `map`
+`json()` installs a parse guard, named `depth`, that counts open `map`
 and `list` rules and refuses past `DEPTH_LIMIT` (127, which is what
 serde_json accepts). Two independent reasons, and BOTH have to stay true
 of any replacement:
@@ -45,7 +45,7 @@ of any replacement:
 Three details that look arbitrary and are not:
 
 - The predicate is `<=`, and the count includes the rule the loop is
-  inside. The engine hands the budget check that rule separately, as
+  inside. The engine hands the depth check that rule separately, as
   `context.rule`, and `rule_stack` holds only its ancestors; a container
   is open from the moment it is the current rule, so it is counted. When
   only the ancestors were counted the boundary depended on what the
@@ -55,9 +55,11 @@ Three details that look arbitrary and are not:
 - Depth is counted from RULE NAMES, not `rule_stack.len()`. The stack
   holds about three rules per level, so a length limit would encode that
   ratio and shift the first time the grammar gains an alternate.
-- `parse_budget` is called AFTER `grammar()`. An options pass that does
-  not mention `parse.budget` is not required to preserve one set before
-  it.
+- The limit is a guard, not the parse budget. The budget is one slot, and a
+  caller's `parse_budget` replaced it in place, taking the limit with it;
+  a caller's budget now runs beside the guard. A grammar built on this
+  one replaces the guard by installing its own under the same name, as
+  `tabnas_jsonic` does.
 
 The rejection carries the engine's `cancel` code. That is Rust-only:
 there is no shared fixture for it, because the other two runtimes have
@@ -73,7 +75,7 @@ runtimes legitimately produce different text.
   first, in ascending numeric order, so TS reads `{"2":"a","1":"b"}` back
   as `1`, `2`. An `IndexMap` keeps document order, as `serde_json` does.
   Pinned by `integer_like_keys_keep_document_order_like_its_platform_oracle`.
-- **The `cancel` code.** The depth budget's rejection. Neither other
+- **The `cancel` code.** The depth guard's rejection. Neither other
   runtime limits depth, so it must never reach a shared fixture.
 
 Both were found by review, not by a test, and the docs asserted the

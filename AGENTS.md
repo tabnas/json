@@ -151,7 +151,7 @@ the siblings out and builds them first.
    before committing it.
 
    **`cancel` is Rust-only** and outside this contract: it is what the
-   depth budget in rule 4 answers, and neither other runtime limits
+   depth guard in rule 4 answers, and neither other runtime limits
    depth, so there is nothing for them to agree with. It must therefore
    never appear in a shared fixture.
 4. Stay standard. Any change that would accept input `JSON.parse` /
@@ -188,8 +188,8 @@ the siblings out and builds them first.
      in `rs/tests/json_test.rs`, which asserts the oracle agrees.
    - **Nesting depth, Rust only.** `serde_json` accepts 127 levels and
      refuses the 128th; `JSON.parse` and `encoding/json` both go far
-     deeper, so neither TS nor Go limits depth. Rust does, through
-     `options.parse.budget` bound in `json()`, and it is the same rule 4
+     deeper, so neither TS nor Go limits depth. Rust does, through the
+     `depth` parse guard installed in `json()`, and it is the same rule 4
      reasoning as the exponent above — with a second, independent
      justification: WITHOUT the limit, 1 KB of open brackets aborts the
      process with a **stack overflow** rather than returning an error.
