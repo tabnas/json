@@ -112,7 +112,7 @@ publish tagged releases). Go no longer does:
   the `"Replace": null` assertion below is what keeps it that way.) That
   is the module's only tabnas dependency besides
   `github.com/tabnas/support/go`.
-- Rust: `tabnas = { path = "../../parser/rs" }` in `rs/Cargo.toml`. That
+- Rust: `tabnas = { package = "tabnas-parser", path = "../../parser/rs" }` in `rs/Cargo.toml`. That
   is the crate's only tabnas dependency. The engine crate is unpublished,
   so `rs/Cargo.lock` records a resolution naming it and there is no
   registry version to fall back on — which is why `ci/rust/run.sh` runs
