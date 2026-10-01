@@ -22,6 +22,7 @@ design see [`concepts.md`](concepts.md).
 | `json` | function | Install the strict options and the grammar on an engine. |
 | `JsonError` | type alias | Re-export of `tabnas::TabnasError`. |
 | `VERSION` | const | Crate version, always equal to `ts/package.json`. |
+| `manifest_text` | function | The plugin manifest, `tabnas.plugin.json`, as text, so a translation host can read it from the Rust crate; the other runtimes have no such function yet, since the manifest file is theirs to read. |
 
 Everything else is private. There is no rules-only entry point matching
 the Go `RegisterJSONGrammar`; see [Differences in the surface](#differences-in-the-surface).
