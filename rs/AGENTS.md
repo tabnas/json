@@ -8,12 +8,14 @@ and this file only covers what is specific to this crate.
 
 | Path | |
 |---|---|
-| `src/lib.rs` | the whole port: options, grammar document, plugin, `make`, `parse`, and the unit tests that read the document itself |
+| `src/lib.rs` | the whole port: options, grammar document, plugin, `make`, `parse`, the translation part `manifest_text` (`include_str!` of the copy in `translate/`), and the unit tests that read the document itself |
 | `tests/parity_test.rs` | the shared `../test/spec/*.tsv` fixtures, plus the serde_json oracle |
 | `tests/conformance_test.rs` | the external nst/JSONTestSuite corpus, and the divergence register |
 | `tests/common/oracle.rs` | one value comparator, shared by both of those |
 | `tests/json_test.rs` | in-language behaviour and the deliberate asymmetries |
 | `tests/version_test.rs` | the version sites must agree |
+| `tests/translate_test.rs` | the translation part: the embedded manifest is `../tabnas.plugin.json`, and its `translate` object reads and writes a tree through the `json` render alchemy carries, and declares no loss |
+| `translate/` | the crate's copy of `../tabnas.plugin.json` (as `manifest.json`), which a packaged crate needs; `tests/translate_test.rs` holds it to the file |
 | `tests/common/spec.rs` | the fixture loader |
 | `doc/*.md` | the four reader-facing Diátaxis pages, gated by the prose gate |
 | `README.md` | the crate front page, also gated |

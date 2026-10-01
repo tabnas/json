@@ -429,6 +429,23 @@ pub fn parse(src: &str) -> Result<Value, JsonError> {
     DEFAULT.get_or_init(make).parse(src)
 }
 
+/// The plugin's manifest, `tabnas.plugin.json`, as the repository carries
+/// it. Its `translate` object is what a host that translates reads: the
+/// shape JSON is read as and written from (`tree`) and the render that
+/// writes it, which is the `json` render alchemy carries rather than a
+/// file of this repository's. It declares no loss: that render keeps every
+/// value and every number's spelling, so a JSON document written from a
+/// JSON tree loses nothing. The crate embeds its own copy,
+/// `translate/manifest.json`, since a packaged crate holds nothing outside
+/// `rs/`; `tests/translate_test.rs` holds the copy to the file.
+///
+/// ```
+/// assert!(tabnas_json::manifest_text().contains("\"translate\""));
+/// ```
+pub fn manifest_text() -> &'static str {
+    include_str!("../translate/manifest.json")
+}
+
 #[cfg(test)]
 mod document {
     use super::json_document;
