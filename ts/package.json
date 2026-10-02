@@ -18,7 +18,8 @@
     "node": ">=24"
   },
   "scripts": {
-    "build": "tsc --build src",
+    "embed": "node embed-translate.js",
+    "build": "npm run embed && tsc --build src",
     "watch": "tsc --build src -w",
     "install-json-test-suite": "sh ../test/fetch-jsontestsuite.sh",
     "clean": "rm -rf node_modules dist package-lock.json",
