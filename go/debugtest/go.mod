@@ -9,10 +9,10 @@ go 1.24.7
 
 require (
 	github.com/tabnas/debug/go v0.3.8
-	github.com/tabnas/json/go v0.5.12
+	github.com/tabnas/json/go v0.5.13
 )
 
-require github.com/tabnas/parser/go v0.12.8
+require github.com/tabnas/parser/go v0.12.9
 
 replace github.com/tabnas/json/go => ../
 
