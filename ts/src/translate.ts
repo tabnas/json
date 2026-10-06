@@ -19,6 +19,7 @@ const TRANSLATION: TranslationParts = Object.freeze({
   "$schema": "https://tabnas.dev/schema/plugin.schema.json",
   "name": "@tabnas/json",
   "go": "github.com/tabnas/json/go",
+  "rust": "tabnas-json",
   "description": "A standard JSON parser (RFC 8259) for the tabnas engine.",
   "engine": "@tabnas/parser",
   "extensions": [
