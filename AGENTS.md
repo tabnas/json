@@ -97,16 +97,22 @@ grammar.
 
 ## The tabnas engine dependency
 
-TypeScript and Rust depend on the unpublished `@tabnas` siblings via a
-**sibling checkout** (the standard tabnas dev model until the packages
-publish tagged releases). Go no longer does:
+TypeScript and Go resolve published packages, from the npm registry and
+the Go module proxy, so a sibling checkout is optional local wiring
+there. Only Rust needs one:
 
-- TypeScript: `@tabnas/parser` is a `peerDependency` (`">=2"`) in
-  `ts/package.json` and mirrored as a `file:../../parser/ts`
-  devDependency for local builds (npm >=7 / Node >=24 auto-installs
-  peers; `engines.node` is `">=24"`). `@tabnas/debug` and
-  `@tabnas/railroad` are **dev-only** `file:` devDependencies — debug for
-  the composition test, railroad to regenerate `ts/doc/grammar.{svg,txt}`.
+- TypeScript: `@tabnas/parser` is a `peerDependency` (`">=0"`) in
+  `ts/package.json` and mirrored as a `"*"` devDependency for local
+  builds (npm >=7 / Node >=24 auto-installs peers; `engines.node` is
+  `">=24"`). `@tabnas/debug`, `@tabnas/railroad` and `@tabnas/support`
+  are **dev-only** `"*"` devDependencies — debug for the composition
+  test, railroad to regenerate `ts/doc/grammar.{svg,txt}`, support for
+  the shared fixture runner `parity.test.js` uses. None is a `file:`
+  path. The committed `ts/package-lock.json` pins each of them to a
+  registry release (`enginepin.test.js` holds the parser and support
+  pins to `go/go.mod`), and a sibling checkout takes the registry copy's
+  place only where admin's `scripts/link.sh` symlinks it into
+  `ts/node_modules/@tabnas/`.
 - Go: `require github.com/tabnas/parser/go vX.Y.Z` in `go/go.mod` — a
   published version, resolved from the proxy, with **no `replace`**.
   (It used to carry one onto `../../parser/go`; it no longer does, and
@@ -120,11 +126,11 @@ publish tagged releases). Go no longer does:
   cargo **without** `--locked` and checks the lockfile by diffing it
   instead, exempting the engine's own version.
 
-Clone `https://github.com/tabnas/parser` (plus `debug`/`railroad` for the
-optional test and diagram) as siblings of this repo, build the engine's
-TS (`cd parser/ts && npm install && npm run build`), then work here. CI
+Only the Rust side needs a sibling checkout: clone
+`https://github.com/tabnas/parser` next to this repo. CI
 (`.github/workflows/ci.yml`, through the shared `polyglot-ci.yml`) checks
-the siblings out and builds them first.
+the siblings out, builds them, and links them over the registry copies
+before building this repo.
 
 ## Authority and alignment rules
 
@@ -336,7 +342,7 @@ runner cross-checks against the platform `JSON.parse`, which rejects them.
 TypeScript (from `ts/`):
 
 ```bash
-npm install            # auto-installs the @tabnas/parser peer; resolves file: siblings
+npm install            # auto-installs the @tabnas/parser peer; resolves the @tabnas devDependencies at the registry versions ts/package-lock.json pins
                        # npm test: `pretest` fetches the conformance corpus first
 npm test               # tsc --build src, then node --test test/**/*.test.js
 ```
@@ -806,7 +812,7 @@ composing with the [`@tabnas/debug`](https://github.com/tabnas/debug)
 plugin (the structured `debug.model()` / `debug.describe()` introspection):
 
 - TS: `ts/test/compose-debug.test.js` resolves the debug plugin
-  dynamically. `@tabnas/debug` is a `file:` devDependency, so plain
+  dynamically. `@tabnas/debug` is a `"*"` devDependency, so plain
   `npm test` runs it; outside the package it **skips** unless
   `TABNAS_DEBUG_PATH` points at a built `@tabnas/debug`. It asserts the
   rule set (`val`/`map`/`list`/`pair`/`elem`), `m.config.start === 'val'`
