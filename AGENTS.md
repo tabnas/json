@@ -827,30 +827,36 @@ plugin (the structured `debug.model()` / `debug.describe()` introspection):
 
 `.github/workflows/ci.yml` is a thin caller for the org-standard
 reusable workflow `tabnas/.github/.github/workflows/polyglot-ci.yml@main`,
-passing `deps: "parser debug abnf railroad"` and
-`build-order: "parser debug json abnf railroad"`. (It replaced the
-per-repo `build.yml` described below, which is kept here because it
-documents what the shared workflow does on this repo's behalf.) The
-shared workflow has no repo-specific step and does not fetch
-nst/JSONTestSuite itself — so each runtime fetches it: `pretest` before
-`npm test`, `TestMain` before `go test ./...`. That is deliberate. It is
-the only reason the conformance suite executes in CI at all; before those
-hooks existed both runners skipped there, and every CI run reported green
-while grading zero cases.
+passing `deps: "parser support debug"` and
+`build-order: "parser support debug json"`. The shared workflow owns
+the jobs and their OS, Node and Go matrix. It has no repo-specific step
+and does not fetch nst/JSONTestSuite itself — so each runtime fetches it:
+`pretest` before `npm test`, `TestMain` before `go test ./...`. That is
+deliberate. It is the only reason the conformance suite executes in CI
+at all; before those hooks existed both runners skipped there, and every
+CI run reported green while grading zero cases.
 
-The two jobs, neither publishing to npm:
+Its two jobs, neither publishing to npm:
 
-- **build** (Ubuntu/Windows/macOS, Node 24): sets
+- **ts** (Ubuntu/Windows/macOS, Node `24.x`): sets
   `git config --global core.autocrlf false` (CRLF corrupts the `.tsv`
-  fixtures), git-clones the tabnas closure (`parser debug abnf railroad`)
-  as siblings, `npm i && npm run build --if-present` each, then
-  `npm test` here. Because `@tabnas/debug` is a devDependency, the
-  composition test runs as part of `npm test`.
-- **build-go** (Ubuntu/macOS, Go 1.24): clones the same siblings,
-  mirrors `admin/scripts/link.sh` by creating `vendor/` symlinks for any
-  `../vendor/` replaces and a `go work` over every non-vendor-replaced
-  module, then `go build` / `go test -v` here. The `go/debugtest/` module
-  is separate and is not exercised by this job.
+  fixtures) and git-clones the `deps` repos as siblings. For each repo in
+  `build-order` it runs `npm i`, links the cloned siblings over the
+  registry copies in that repo's `node_modules/@tabnas`, and runs
+  `npm run build --if-present`; then `npm test` here. Because
+  `@tabnas/debug` is a devDependency, the composition test runs as part
+  of `npm test`, against the cloned `debug`.
+- **go** (Ubuntu/macOS, Go `1.24`): clones the same siblings and mirrors
+  `admin/scripts/link.sh`, creating `vendor/` symlinks for any
+  `../vendor/` replaces and a `go work` over every module that is not
+  vendor-replaced, then runs `go build ./...` in `go/`. A `GOWORK=off`
+  step then builds every module under `go/` and compiles its tests
+  against the versions its `go.mod` names, from the module proxy, so an
+  unpublished or incompatible require fails there. `go/debugtest/` keeps
+  its `replace` lines in that step, so it builds against its parent and
+  the cloned `debug` and `parser`. Last, `go test -v ./...` runs in
+  every module under `go/`, so the `go/debugtest/` composition test runs
+  in CI too.
 
 ## Agent tooling
 

@@ -167,7 +167,7 @@ npm test         # tsc build + node --test
 To work against an unreleased engine, link a built checkout of it over
 `node_modules/@tabnas/parser` once the install has finished.
 
-See [`AGENTS.md`](AGENTS.md) for layout and conventions.
+See [`AGENTS.md`](../AGENTS.md) for layout and conventions.
 
 
 ## Grammar diagram
