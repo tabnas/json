@@ -7,9 +7,10 @@ package tabnasjson
 //
 // The fixture loader, the escape codec, the ERROR:<code> contract and the
 // row loop all come from github.com/tabnas/support/go, whose TypeScript
-// half ts/test/parity.test.js uses to run the SAME files — so the two
-// implementations cannot drift without one of them going red, and neither
-// can the two loaders.
+// half ts/test/parity.test.js uses to run the SAME files, as does the Rust
+// suite rs/tests/parity_test.rs with its own loader (rs/tests/common/spec.rs)
+// — so the three implementations cannot drift without one of them going
+// red, and neither can the loaders.
 //
 // What is left here is only what is specific to @tabnas/json: every row is
 // also cross-checked against encoding/json, since this package's contract
@@ -26,7 +27,7 @@ import (
 
 // TestSpec runs every fixture in the spec directory. FindSpecDir walks up
 // from the package directory, and Dir discovers the files by listing, so
-// adding a .tsv runs it in both runtimes without touching either runner.
+// adding a .tsv runs it in every runtime without touching any runner.
 func TestSpec(t *testing.T) {
 	dir, err := support.FindSpecDir("")
 	if err != nil {

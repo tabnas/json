@@ -14,9 +14,9 @@ all three runtimes share the conformance fixtures in
 go get github.com/tabnas/json/go
 ```
 
-The module depends on `github.com/tabnas/parser/go`; until that is
-published it is resolved via a `replace` directive to a sibling checkout
-See [Develop](#develop).
+The module depends on `github.com/tabnas/parser/go`; that is published to
+the module proxy, and it is resolved from there like any other module. See
+[Develop](#develop).
 
 ## Quick example
 
@@ -132,13 +132,16 @@ if err != nil {
 
 ## Develop
 
-This module depends on the engine as a sibling checkout:
+`go.mod` requires a released engine, which the module proxy serves, so the
+tests need nothing beside this repository:
 
 ```bash
-git clone https://github.com/tabnas/parser   # sibling of this repo
-go test ./...   # replace directive resolves ../../parser/go;
-                # also runs the shared ../test/spec fixtures
+go test ./...   # also runs the shared ../test/spec fixtures
 ```
+
+To work against an unreleased engine, clone `https://github.com/tabnas/parser`
+beside this repository and run `scripts/link.sh` from `tabnas/admin`, which
+writes a `go.work` one level up. Never commit that file.
 
 See [`AGENTS.md`](AGENTS.md) for layout and conventions.
 

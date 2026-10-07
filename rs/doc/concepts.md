@@ -281,8 +281,8 @@ a worse trade than the lint.
 ## How the crate is built and checked
 
 The engine is a path dependency on a sibling checkout, so there is
-nothing to fetch and `rs/Cargo.lock` records a resolution that includes
-an unpublished crate. `ci/rust/run.sh` is the gate: it pins the minimum
+nothing to fetch and `rs/Cargo.lock` records the engine at the sibling's
+version rather than a crates.io release. `ci/rust/run.sh` is the gate: it pins the minimum
 supported Rust version from `Cargo.toml`, checks that the lockfile does
 not change during the run (exempting the engine's own version, which
 moves with the sibling), and runs formatting, the build, the tests, the

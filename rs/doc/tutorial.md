@@ -23,16 +23,12 @@ JSON-with-comments parser on top of it.
 
 ## Step 1: Add the dependency
 
-The `tabnas` engine is not published to a registry yet, so both it and
-this crate are consumed as sibling checkouts, the standard tabnas
-development model. Clone `https://github.com/tabnas/parser` and
-`https://github.com/tabnas/json` next to each other, then point at the
-crate by path:
+The crate and the `tabnas` engine are both on crates.io. The engine is not
+published under its library name: its package is `tabnas-parser`, and its
+library is named `tabnas` in code. Add both:
 
-```toml
-[dependencies]
-tabnas-json = { path = "../json/rs" }
-tabnas = { package = "tabnas-parser", path = "../parser/rs" }
+```bash
+cargo add tabnas-json tabnas-parser
 ```
 
 **Both entries are needed.** A crate's dependencies are not passed on to
