@@ -1,8 +1,10 @@
 # Build, test and publish the TypeScript (ts/), Go (go/) and Rust (rs/)
 # implementations. ts/ is canonical; go/ and rs/ track it.
 #
-# Local build/test resolve the unpublished @tabnas siblings via the
-# repo-set go.work + node_modules symlinks (admin/scripts/link.sh).
+# TypeScript and Go build against the published @tabnas siblings (npm, the
+# Go proxy); admin/scripts/link.sh can point them at local checkouts
+# instead (node_modules symlinks + a go.work one level up). rs/ takes the
+# engine by path from a sibling checkout (rs/Cargo.toml).
 
 .PHONY: all build test clean build-ts build-go build-rs test-ts test-go test-rs \
         clean-ts clean-go clean-rs publish-ts publish-go version-rs tags-go reset \
@@ -19,8 +21,9 @@ clean: clean-ts clean-go clean-rs
 
 # --- External conformance suite ---
 # Fetch nst/JSONTestSuite at its pinned commit into test/jsontestsuite
-# (gitignored). Both runtimes fetch it themselves before grading — `pretest`
-# in ts/, TestMain in go/ — so this target is only for fetching it by hand;
+# (gitignored). Every runtime fetches it itself before grading — `pretest`
+# in ts/, TestMain in go/, corpus() in rs/tests/conformance_test.rs — so
+# this target is only for fetching it by hand;
 # it is not a prerequisite of `make test`. When the corpus is missing the
 # conformance tests fail, they never skip.
 json-test-suite:
@@ -86,10 +89,11 @@ clean-rs:
 # ts/package.json. A release that bumps the TS and Go sites and forgets
 # these fails that test.
 #
-# Unlike publish-go it neither commits nor tags. There is nothing to
-# release: the crate depends on the engine by path, and crates.io does
-# not accept a path dependency, so tabnas-json is not published. Only the
-# constants need to stay in step.
+# Unlike publish-go it neither commits nor tags, and it publishes nothing:
+# release.yml's crates job publishes tabnas-json to crates.io from the
+# release tag, after crates-release.yml rewrites the manifest's path
+# dependency as a crates.io requirement. Here only the constants need to
+# stay in step.
 version-rs:
 	@test -n "$(V)" || (echo "Usage: make version-rs V=x.y.z" && exit 1)
 	sed -i.bak 's/^version = ".*"/version = "$(V)"/' rs/Cargo.toml

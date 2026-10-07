@@ -2,8 +2,8 @@
 
 /* enginepin.test.js — the two runtimes test against ONE set of tabnas deps.
  *
- * json ships the same grammar twice and proves the two agree by running both
- * runtimes over the SAME fixtures. That proof is only worth what its inputs
+ * json ships the same grammar three times and proves they agree by running
+ * every runtime over the SAME fixtures. That proof is only worth what its inputs
  * are worth: the committed lockfile resolved @tabnas/parser 0.2.0 while
  * go/go.mod required parser/go v0.8.10, so the TS half of every shared
  * fixture ran against an engine six minor versions behind the Go half, and

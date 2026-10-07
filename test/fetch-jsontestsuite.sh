@@ -1,6 +1,6 @@
 #!/bin/sh
 # Fetch the external JSON conformance corpus (nst/JSONTestSuite) into
-# test/jsontestsuite/, where both runtimes' conformance tests find it.
+# test/jsontestsuite/, where every runtime's conformance tests find it.
 #
 # UPSTREAM (pinned):
 #   https://github.com/nst/JSONTestSuite

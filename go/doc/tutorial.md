@@ -24,9 +24,9 @@ error, and built a JSON-with-comments parser on top of it.
 go get github.com/tabnas/json/go
 ```
 
-The module depends on the `tabnas` engine, `github.com/tabnas/parser/go`.
-Until that is published, it is resolved with a `replace` directive to a
-sibling checkout; see the "Develop" section of [`../README.md`](../README.md).
+The module depends on the `tabnas` engine, `github.com/tabnas/parser/go`;
+that is published to the module proxy too, and it is fetched along with
+this module by `go get`.
 
 ## Step 2: Parse a value
 

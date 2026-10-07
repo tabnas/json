@@ -26,8 +26,8 @@ package tabnasjson
 //	i_  implementation-defined; this package's contract is parity with the
 //	    platform parser, so we assert we agree with encoding/json.
 //
-// ts/test/conformance.test.js runs the SAME directory with the same rules,
-// so the two runtimes cannot drift on it.
+// ts/test/conformance.test.js and rs/tests/conformance_test.rs run the SAME
+// directory with the same rules, so the runtimes cannot drift on it.
 
 import (
 	stdjson "encoding/json"

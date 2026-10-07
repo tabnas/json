@@ -1,11 +1,11 @@
 # Agents Guide — shared spec fixtures
 
-`spec/*.tsv` holds the cross-runtime conformance fixtures. Both runtimes
-auto-discover and run **every** file in this directory, so a change here
-affects TypeScript and Go together — edit with that in mind.
+`spec/*.tsv` holds the cross-runtime conformance fixtures. Every runtime
+auto-discovers and runs **every** file in this directory, so a change here
+affects TypeScript, Go and Rust together — edit with that in mind.
 
-These moved up from `ts/test/spec/` so the fixtures sit above both
-runtimes rather than inside one of them, matching @tabnas/parser.
+These moved up from `ts/test/spec/` so the fixtures sit above every
+runtime rather than inside one of them, matching @tabnas/parser.
 
 ## Format
 
@@ -27,18 +27,21 @@ The `expected` column is written with JavaScript `JSON.stringify` semantics
 (so `-0` renders as `0`); the Go runner compares by value rather than by
 text, which keeps that difference from mattering.
 
-The error **code** is part of the contract, not just "it threw": both
-runtimes must reject an `ERROR:` row with exactly that code. Every row is
+The error **code** is part of the contract, not just "it threw": every
+runtime must reject an `ERROR:` row with exactly that code. Every row is
 additionally cross-checked against the platform JSON parser — `JSON.parse`
-in TypeScript, `encoding/json` in Go — because this package's whole contract
-is plain JSON.
+in TypeScript, `encoding/json` in Go, `serde_json` in Rust — because this
+package's whole contract is plain JSON.
 
 ## Who runs what
 
 - TypeScript: `ts/test/parity.test.js` — `makeRunner(...).dir(...)`.
 - Go: `go/parity_test.go` — `support.Runner{...}.Dir(t, dir)`.
+- Rust: `rs/tests/parity_test.rs`, which reads the fixtures with its own
+  loader, `rs/tests/common/spec.rs`.
 
-Both are a dozen lines holding only what is specific to this package: the
+The TypeScript and Go runners are a dozen lines holding only what is
+specific to this package: the
 cross-check against the platform parser, and (in Go) unwrapping the
 insertion-ordered map. Everything else — finding `test/spec`, reading the
 file, decoding escapes, the `ERROR:` contract, the comparison, the
@@ -50,8 +53,9 @@ The Go cross-check for rejected input is its own walk,
 `TestSpecRejectedByBoth`, because the runner hands its error hook an error
 rather than the input that caused it.
 
-Both discover files by directory listing: adding a `.tsv` here runs it in
-both runtimes without touching either runner. An empty fixture, and a spec
+Every runner discovers files by directory listing: adding a `.tsv` here
+runs it in every runtime without touching any runner. An empty fixture,
+and a spec
 directory with no fixtures in it, both **fail** — a runner that reports
 green having run nothing is indistinguishable from coverage that was never
 there.
@@ -59,28 +63,31 @@ there.
 ## Rules
 
 - Prefer adding a fixture here over a one-off in-language assertion when a
-  case is expressible as input → output. That is what keeps the two
+  case is expressible as input → output. That is what keeps the
   runtimes honest against each other.
-- TypeScript is canonical. If the two runtimes disagree, the TS behaviour is
-  the expected value — unless Go has exposed a genuine TS defect, in which
-  case fix TS first and pin the corrected behaviour here.
-- A new fixture must pass in BOTH runtimes: run `go test ./...` (from `go/`)
-  and `npm test` (from `ts/`) before considering it done.
+- TypeScript is canonical. If the runtimes disagree, the TS behaviour is
+  the expected value — unless another port has exposed a genuine TS defect,
+  in which case fix TS first and pin the corrected behaviour here.
+- A new fixture must pass in EVERY runtime: run `go test ./...` (from `go/`),
+  `npm test` (from `ts/`) and `cargo test` (from `rs/`) before considering
+  it done.
 
 ## The external corpus
 
-`spec/*.tsv` is the *parity* contract between the two runtimes. It is not,
+`spec/*.tsv` is the *parity* contract between the runtimes. It is not,
 by itself, evidence of RFC conformance — a hand-written fixture set only
 tests what its author thought to write down. The external check is
 [nst/JSONTestSuite](https://github.com/nst/JSONTestSuite) (318 cases: 95
 `y_` must-accept, 188 `n_` must-reject, 35 `i_` implementation-defined),
-graded by `ts/test/conformance.test.js` and `go/conformance_test.go`.
+graded by `ts/test/conformance.test.js`, `go/conformance_test.go` and
+`rs/tests/conformance_test.rs`.
 
 That corpus is third-party and is **never committed**. `fetch-jsontestsuite.sh`
-clones it at a pinned commit into the gitignored `jsontestsuite/`, and both
-runtimes run that fetch themselves — `pretest` in ts/, `TestMain` in go/ —
-so it is present in CI as well as locally. Both runners assert the census
-(95/188/35) before grading, and both **fail rather than skip** when the
+clones it at a pinned commit into the gitignored `jsontestsuite/`, and every
+runtime runs that fetch itself — `pretest` in ts/, `TestMain` in go/,
+`corpus()` in `rs/tests/conformance_test.rs` — so it is present in CI as
+well as locally. All three runners assert the census (95/188/35) before
+grading, and all three **fail rather than skip** when the
 corpus is absent: a conformance test that quietly does not run reports a
 green tick that is a lie.
 

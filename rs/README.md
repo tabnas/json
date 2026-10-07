@@ -62,21 +62,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Install
 
-The `tabnas` crate is not published to a registry, so the engine is
-consumed as a **sibling checkout**, the standard tabnas development
-model. Clone `https://github.com/tabnas/parser` next to this repository
-and point at it:
+The crate and the engine are both on crates.io. The engine is not
+published under its library name: its package is `tabnas-parser`, and its
+library is named `tabnas` in code. Add both:
 
-```toml
-[dependencies]
-tabnas-json = { path = "../json/rs" }
-tabnas = { package = "tabnas-parser", path = "../parser/rs" }
+```bash
+cargo add tabnas-json tabnas-parser
 ```
 
 Both entries are needed. A crate's dependencies are not passed on to its
 dependents, so `tabnas-json` alone does not put `tabnas` in your extern
 prelude, and the examples above that name `tabnas::Tabnas` would not
 resolve. Only `JsonError` is re-exported.
+
+In this repository, `Cargo.toml` takes the engine by path from a sibling
+checkout of `https://github.com/tabnas/parser` instead.
 
 ## Differences from the canonical TypeScript
 

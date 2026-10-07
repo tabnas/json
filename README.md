@@ -138,15 +138,16 @@ let value = parser.parse("[1,2,3]")?;
 
 ## Building locally
 
-This package depends on the `tabnas` engine as a sibling checkout (the
-same model jsonic uses), until `tabnas/parser` publishes tagged packages:
+The TypeScript and Go sides take the `tabnas` engine from the npm registry
+and the Go module proxy. The Rust crate takes it by path (`rs/Cargo.toml`),
+so it needs a sibling checkout of the engine:
 
 ```bash
 git clone https://github.com/tabnas/parser     # sibling of this repo
 git clone https://github.com/tabnas/json
 ```
 
-Then build the engine first and run each runtime's tests; see
+Then run each runtime's tests; see
 [`AGENTS.md`](AGENTS.md) and the per-runtime READMEs. CI does this
 automatically (`.github/workflows/ci.yml`).
 

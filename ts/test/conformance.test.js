@@ -23,8 +23,8 @@
 //   i_  implementation-defined; this package's contract is parity with the
 //       platform parser, so we assert we agree with JSON.parse.
 //
-// go/conformance_test.go runs the SAME directory with the same rules, so
-// the two runtimes cannot drift on it.
+// go/conformance_test.go and rs/tests/conformance_test.rs run the SAME
+// directory with the same rules, so the runtimes cannot drift on it.
 
 const { test, describe } = require('node:test')
 const Assert = require('node:assert')
