@@ -12,8 +12,9 @@ Available for [TypeScript/JavaScript](#install) and [Go](../go/).
 npm install @tabnas/json
 ```
 
-`tabnas` (the engine) is a peer/dependency; see [Develop](#develop) for
-the sibling-checkout setup used until it is published.
+`@tabnas/parser` (the engine) is a peer dependency; npm 7 and later
+install it with this package. It is published on npm like this one, and
+[Develop](#develop) covers working on the package itself.
 
 ## Quick example
 
@@ -154,14 +155,17 @@ code 1.
 
 ## Develop
 
-This package depends on the engine as a sibling checkout:
+The engine comes from the npm registry like every other dependency, at
+the version `package-lock.json` pins, so nothing needs checking out
+beside this repository:
 
 ```bash
-git clone https://github.com/tabnas/parser   # sibling of this repo
-( cd parser/ts && npm install && npm run build )
-npm install      # resolves "@tabnas/parser": "file:../../parser/ts"
+npm install      # resolves @tabnas/parser from the registry, at the version package-lock.json pins
 npm test         # tsc build + node --test
 ```
+
+To work against an unreleased engine, link a built checkout of it over
+`node_modules/@tabnas/parser` once the install has finished.
 
 See [`AGENTS.md`](AGENTS.md) for layout and conventions.
 
