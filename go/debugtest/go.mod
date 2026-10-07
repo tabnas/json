@@ -1,8 +1,10 @@
 // Isolated module for the json + @tabnas/debug integration test.
 // It is a SEPARATE module (its own go.mod), so the main module's
 // `go test ./...` does not descend into it and stays self-contained —
-// it has no dependency on the external debug tool. The debug CI
-// job runs `go test` here with the parser and debug siblings checked out.
+// it has no dependency on the external debug tool. json's own CI runs
+// it: the shared polyglot-ci `go` job builds and tests every module
+// under go/, this one included, with the parser and debug siblings (in
+// ci.yml's `deps`) cloned beside this repo.
 module github.com/tabnas/json/go/debugtest
 
 go 1.24.7
