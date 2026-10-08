@@ -1,6 +1,6 @@
 {
   "name": "@tabnas/json",
-  "version": "0.5.15",
+  "version": "0.5.16",
   "main": "dist/json.js",
   "type": "commonjs",
   "types": "dist/json.d.ts",
