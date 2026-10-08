@@ -40,7 +40,7 @@ mod readme_examples {}
 /// release orchestrator rewrites both, and `tests/version_test.rs` fails
 /// the build if they drift. Mirrors `VERSION` in `ts/src/json.ts` and
 /// `const VERSION` in `go/json.go`.
-pub const VERSION: &str = "0.5.15";
+pub const VERSION: &str = "0.5.16";
 
 /// The error a failed parse produces, re-exported so callers need not
 /// depend on the engine crate directly. Mirrors the TypeScript
