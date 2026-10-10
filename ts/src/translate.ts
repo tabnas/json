@@ -11,6 +11,7 @@ type TranslationPart = Readonly<{
 type TranslationParts = Readonly<{
   manifest: string
   lift?: TranslationPart
+  embed?: TranslationPart
   render?: TranslationPart
 }>
 
@@ -56,7 +57,11 @@ const TRANSLATION: TranslationParts = Object.freeze({
   "translate": {
     "reads": "tree",
     "writes": "tree",
-    "render": "json"
+    "root": "any",
+    "render": "json",
+    "loss": [
+      "JSON has no spelling for Infinity or NaN, so a number that is not finite is written as null."
+    ]
   }
 }
 `,
