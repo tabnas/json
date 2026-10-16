@@ -41,6 +41,7 @@
     "writes": "tree",
     "root": "any",
     "render": "json",
+    "transduce": "alchemy/transduce.alc",
     "loss": [
       "JSON has no spelling for Infinity or NaN, so a number that is not finite is written as null."
     ]
