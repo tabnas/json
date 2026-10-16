@@ -9,7 +9,8 @@
 // run `npm run embed` in `ts/`, which copies it into `rs/translate/`; this
 // fails until both are the same. JSON's render is the `json` render
 // alchemy carries, not a file of this repository's, so there is no render
-// to hold and no `render_text()`.
+// to hold and no `render_text()`; its transducer, `alchemy/transduce.alc`,
+// is a file of this repository's, and its copy is held the same way.
 
 use std::fs;
 use std::path::Path;
@@ -51,6 +52,39 @@ fn the_structural_interface_names_the_builtin_render_entry() {
     let render = parts.render.expect("JSON carries a render");
     assert_eq!(render.entry, "json");
     assert_eq!(render.source, None);
+    let transduce = parts.transduce.expect("JSON carries a transducer");
+    assert_eq!(transduce.entry, "json-transduce");
+    assert!(transduce.source.is_some_and(|s| !s.is_empty()));
+}
+
+/// A transducer makes the format's JSON events of its parser's rule
+/// passes. JSON's is `alchemy/transduce.alc`, the library's `transduce-tree`
+/// over the grammar's rules, and the crate embeds its own copy under the
+/// entry `json-transduce`: this holds the copy to the file the manifest
+/// names.
+#[test]
+fn the_transducer_the_manifest_names_is_the_one_the_crate_embeds() {
+    let translate = translate();
+    let parts = tabnas_json::translate().expect("JSON carries translation parts");
+    let path = translate["transduce"]
+        .as_str()
+        .expect("the manifest names a transducer");
+    assert_eq!(path, "alchemy/transduce.alc");
+    let on_disk = fs::read_to_string(repo_root().join(path))
+        .unwrap_or_else(|e| panic!("translate.transduce names {path}, which cannot be read: {e}"));
+    assert!(
+        on_disk.contains("def json-transduce [input]"),
+        "{path} defines json-transduce"
+    );
+    let transduce = parts.transduce.unwrap_or_else(|| {
+        panic!("translate.transduce names {path}, and the crate carries no transducer")
+    });
+    assert_eq!(transduce.entry, "json-transduce");
+    assert_eq!(
+        transduce.source,
+        Some(on_disk.as_str()),
+        "translate.transduce names {path}, and the crate embeds another text: run npm run embed in ts"
+    );
 }
 
 /// An embed takes a plain tree into a format's own schema. JSON's events
