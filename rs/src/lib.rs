@@ -402,6 +402,14 @@ pub fn json(parser: &mut Tabnas) -> Result<(), GrammarError> {
 pub fn make() -> Tabnas {
     let mut parser = Tabnas::new();
     json(&mut parser).expect("the JSON grammar document is fixed and valid");
+    // Every token of this grammar is the engine's own matchers', so a
+    // parse from a reader may hold a window of the source rather than all
+    // of it (`Tabnas::parse_reader`, admin ADR-30). The option is set here,
+    // on the parser this crate makes whole, and not in [`json`], which
+    // other grammars install beneath matchers of their own.
+    parser
+        .set_options(|options| options.lex.window = true)
+        .expect("lex.window sets");
     parser
 }
 
