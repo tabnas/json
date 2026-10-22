@@ -48,6 +48,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+A parser from `make()` also reads a source from a reader, such as a file,
+with `parse_reader`. It holds a window of the text as it parses, never the
+whole document, and gives what `parse` gives for the same text.
+
 To layer another grammar on the JSON core, install the plugin on your own
 instance and add rules on top of the shared `val` / `map` / `list` /
 `pair` / `elem`:
