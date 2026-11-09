@@ -4,5 +4,6 @@
 // anything real.
 #![allow(dead_code)]
 
+pub mod corpus;
 pub mod oracle;
 pub mod spec;

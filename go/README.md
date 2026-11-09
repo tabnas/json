@@ -86,6 +86,10 @@ p := tabnasjson.Make(tabnas.Options{Info: &tabnas.InfoOptions{Map: &tr, List: &t
 p.Parse(`{"a":[1,2]}`)
 ```
 
+A parser from `Make` also reads a source from an `io.Reader`, such as a
+file, with `ParseReader`. It holds a window of the text as it parses,
+never the whole document, and gives what `Parse` gives for the same text.
+
 ## What it accepts
 
 Exactly standard JSON: objects with double-quoted string keys, arrays,

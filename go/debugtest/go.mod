@@ -14,7 +14,7 @@ require (
 	github.com/tabnas/json/go v0.5.19
 )
 
-require github.com/tabnas/parser/go v0.12.15
+require github.com/tabnas/parser/go v0.12.16
 
 replace github.com/tabnas/json/go => ../
 

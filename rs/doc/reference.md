@@ -69,6 +69,14 @@ let parser = tabnas_json::make();
 let value = parser.parse("[1,2,3]")?;
 ```
 
+The instance declares `lex.window`, so `parser.parse_reader(reader)`
+reads a source a window at a time rather than whole. It gives the value
+and the errors `parse` gives for the same text, except that an error on a
+line longer than the window shows the line from where the window begins.
+`json` on its own leaves the option off, so that a grammar installing the
+plugin beside lexing of its own declares the window itself, once its own
+lexing reads the text only through the window.
+
 It is infallible in its signature, and panics only if the fixed grammar
 document is invalid. That is a bug in this crate rather than anything a
 caller did, which is the same justification the Go `Make` gives for

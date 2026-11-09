@@ -23,7 +23,7 @@
 #
 # It runs automatically before the conformance tests — the `pretest` npm
 # script in ts/, TestMain in go/, and the `corpus()` OnceLock in
-# rs/tests/conformance_test.rs — so a plain `npm test`, `go test ./...`
+# rs/tests/common/corpus.rs — so a plain `npm test`, `go test ./...`
 # or `cargo test`, in CI as well as locally, always grades against it.
 # When the corpus is absent the conformance tests FAIL rather than skip.
 

@@ -292,6 +292,9 @@ surface (`rs/src/lib.rs`) mirror each other:
   clobber token overrides — same ordering rule the Go side enforces).
   Rust `make()` takes no options: apply them afterwards with
   `set_options`, which is the same ordering rule stated differently.
+  All three declare the engine's `lex.window` (`Lex.Window` in Go), so a
+  parse from a reader reads the source a window at a time; the plugin
+  does not (see "A parse from a reader" below).
 - `json` plugin (TS) / `Json` (Go) / `json(&mut parser)` (Rust) — install
   it on a bare engine.
 - `registerJsonGrammar` / `RegisterJSONGrammar` — install just the rule
@@ -339,6 +342,49 @@ hex digit on the plain `\uXXXX` path). This requires the engine's
 deleted entries are `null` rather than `''` — see rule 4. These rejections are covered by `errors.tsv` with
 shared codes. Do not add these escapes to `valid.tsv` — the valid
 runner cross-checks against the platform `JSON.parse`, which rejects them.
+
+## A parse from a reader
+
+The parser `make()` / `Make()` / `make()` builds declares the engine's
+`lex.window` (admin ADR-30 and ADR-33). Every token of this grammar is
+the engine's own matchers', and its one check, `number.exclude`
+(`Number.Exclude` in Go, the `number.check` hook in Rust), reads no
+further than a number's text, so a parse from a reader (`tn.parseReader`,
+`ParseReader`, `parse_reader`) holds a window of the source rather than
+all of it, and gives the value and errors a parse of the same text gives.
+The plugin (`json`, `Json`, `json()`) does not declare it, in any
+runtime: jsonl installs it, and jsonic it or its rules, beneath matchers
+of their own, and the window is a claim about every matcher of the
+assembled grammar, which only that grammar's own constructor can make.
+alchemy, transduce, render and dmog call `make()` to parse JSON, and a
+parse of a string is the same with the window as without it.
+
+`ts/test/reader.test.js`, `go/reader_test.go` and
+`rs/tests/reader_test.rs` hold it: every row of `test/spec/*.tsv` and
+every document of the conformance corpus, parsed whole and from a reader
+handed over in pieces of 1, 3 and 64 bytes, gives the same value, or an
+error with the same code, position, row and column. TypeScript and Rust
+read each also under windows whose margin and block are a few units
+(`parseReaderWithSizes`, `parse_reader_with_sizes`), so that every
+matcher meets the window's edge, and read a document of tokens longer
+than the 64 KiB window. Go's hook for small windows is unexported, so
+`go/reader_test.go` builds a document of over 1 MB in which a token of
+every kind, the long ones included, spans a multiple of 64 KiB (a
+character past ASCII split there by a read), and reads it in pieces of
+several sizes. Three things are compared otherwise, on purpose:
+
+- The 25 corpus documents that are not UTF-8 are no text a reader can
+  give. A reader is refused with `unreadable` where the bytes stop being
+  UTF-8, or at the document's own error where the parse meets that
+  first; which comes first can depend on how far the reader has read
+  ahead.
+- The two corpus documents longer than 4 KiB, 100,000 and 250,000 open
+  brackets that cost a second a parse in TypeScript, are read in pieces
+  of 4 KiB only.
+- An error's excerpt is left out: on a line longer than the window it
+  shows the line from where the window begins, the one thing a parse
+  from a reader shows differently (tabnas/parser's `DIVERGENCE.md`,
+  "What a parse from a reader shows of its source").
 
 ## Build & test
 

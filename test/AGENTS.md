@@ -40,6 +40,10 @@ package's whole contract is plain JSON.
 - Rust: `rs/tests/parity_test.rs`, which reads the fixtures with its own
   loader, `rs/tests/common/spec.rs`.
 
+Every row is read from a reader too, a few bytes at a time, and must give
+what its text gives: `ts/test/reader.test.js`, `go/reader_test.go` and
+`rs/tests/reader_test.rs` (the root `AGENTS.md`, "A parse from a reader").
+
 The TypeScript and Go runners are a dozen lines holding only what is
 specific to this package: the
 cross-check against the platform parser, and (in Go) unwrapping the
@@ -85,7 +89,7 @@ graded by `ts/test/conformance.test.js`, `go/conformance_test.go` and
 That corpus is third-party and is **never committed**. `fetch-jsontestsuite.sh`
 clones it at a pinned commit into the gitignored `jsontestsuite/`, and every
 runtime runs that fetch itself — `pretest` in ts/, `TestMain` in go/,
-`corpus()` in `rs/tests/conformance_test.rs` — so it is present in CI as
+`corpus()` in `rs/tests/common/corpus.rs` — so it is present in CI as
 well as locally. All three runners assert the census (95/188/35) before
 grading, and all three **fail rather than skip** when the
 corpus is absent: a conformance test that quietly does not run reports a

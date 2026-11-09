@@ -323,6 +323,14 @@ func Make(extra ...tabnas.Options) *tabnas.Tabnas {
 		// programmer error while editing the grammar.
 		panic(err)
 	}
+	// Every token of this grammar is the engine's own matchers', and its
+	// one check, Number.Exclude, reads no further than a number's text, so
+	// a parse from a reader (ParseReader, admin ADR-30) may hold a window
+	// of the source rather than all of it. The option is set here, on the
+	// parser this package makes whole, and not in Json, which other
+	// grammars install beneath matchers of their own.
+	window := true
+	j.SetOptions(tabnas.Options{Lex: &tabnas.LexOptions{Window: &window}})
 	// Extra options are applied after the grammar exists so that rule
 	// include/exclude filters operate on the installed alternates (and
 	// info options reach the config the grammar closures captured).
