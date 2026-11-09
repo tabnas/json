@@ -11,6 +11,8 @@ and this file only covers what is specific to this crate.
 | `src/lib.rs` | the whole port: options, grammar document, plugin, `make`, `parse`, the translation part `manifest_text` (`include_str!` of the copy in `translate/`), and the unit tests that read the document itself |
 | `tests/parity_test.rs` | the shared `../test/spec/*.tsv` fixtures, plus the serde_json oracle |
 | `tests/conformance_test.rs` | the external nst/JSONTestSuite corpus, and the divergence register |
+| `tests/reader_test.rs` | a parse from a reader: every fixture row and every corpus document read in pieces of a few bytes, under the window's own sizes and under windows of a few characters, against the same text parsed whole, and two long documents |
+| `tests/common/corpus.rs` | the corpus both of those read, fetched at its pinned commit when absent |
 | `tests/common/oracle.rs` | one value comparator, shared by both of those |
 | `tests/json_test.rs` | in-language behaviour and the deliberate asymmetries |
 | `tests/version_test.rs` | the version sites must agree |
@@ -88,7 +90,8 @@ is shareable.
 ## The conformance grader has a divergence register
 
 `tests/conformance_test.rs` grades the pinned nst/JSONTestSuite corpus,
-fetching it through `corpus()` when absent, the way Go's `TestMain` does.
+fetching it through `corpus()` (`tests/common/corpus.rs`) when absent, the
+way Go's `TestMain` does.
 All 95 `y_` and all 188 `n_` cases agree with serde_json. Eleven of the
 35 `i_` cases do not, and each is named in `KNOWN_DIVERGENCES` with its
 reason (ten lone-surrogate cases, one 48-digit integer where serde_json

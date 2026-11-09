@@ -240,6 +240,13 @@ export const json: Plugin = function json(tn: Tabnas, _options?: any) {
 // after the grammar exists, mirroring the Go `Make`.
 export function make(opts?: Record<string, any>): Tabnas {
   const tn = new Tabnas({ plugins: [json] })
+  // Every token of this grammar is the engine's own matchers', and its one
+  // check, `number.exclude`, reads no further than a number's text, so a
+  // parse from a reader (`tn.parseReader`, admin ADR-30) may hold a window
+  // of the source rather than all of it. The option is set here, on the
+  // parser this package makes whole, and not in the `json` plugin, which
+  // other grammars install beneath matchers of their own.
+  tn.options({ lex: { window: true } })
   if (opts) {
     tn.options(opts)
   }

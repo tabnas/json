@@ -76,6 +76,12 @@ const p = make({ info: { map: true, list: true } })
 p.parse('{"a":[1,2]}')
 ```
 
+A parser from `make()` also reads a source from a reader with
+`parseReader`: an object whose `read(buf)` writes bytes into a
+`Uint8Array`, as Node's `fs.readSync(fd, buf)` does. It holds a window of
+the text as it parses, never the whole document, and gives what `parse`
+gives for the same text.
+
 `VERSION` is exported as the package version string, always equal to
 `package.json`.
 
