@@ -70,7 +70,7 @@ const TRANSLATION: TranslationParts = Object.freeze({
   render: Object.freeze({ entry: "json" }),
   transduce: Object.freeze({ entry: "json-transduce", source: `; JSON's transducer part: the document's JSON events from the json
 ; grammar's rule passes (ParserEvents/1), streamed as the parser makes
-; them, so that a host that reads parser events (alchemy-cli's translate
+; them, so that a host that reads parser events (dmog's translate
 ; and run --grammar, aless) reads a JSON document through this file rather
 ; than through transduce's inference over the grammar's rule events.
 ;
@@ -81,7 +81,7 @@ const TRANSLATION: TranslationParts = Object.freeze({
 ; name, its first token's value; and a val rule's open pass yields the
 ; scalar its first token carries, with the lexeme a number token keeps
 ; (2.50 is written 2.50). Every event is the one the walk of the grammar's
-; value gives, a number's lexeme aside, which alchemy-cli's transduce.tsv
+; value gives, a number's lexeme aside, which dmog's transduce.tsv
 ; runner holds it to; a repeated member is streamed twice, as the
 ; document spells it, for a tree-contract or a capture's policy to judge.
 def json-transduce [input]
